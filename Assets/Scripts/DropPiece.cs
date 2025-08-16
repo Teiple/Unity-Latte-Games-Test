@@ -7,7 +7,7 @@ public class DropPiece : MonoBehaviour
     public float moveAmount = 0.5f;
     public float moveSpeed = 2f;
 
-    private bool isTouching = false;
+    private bool isPicked = false;
     private Vector3 initialPosition;
 
     void Start()
@@ -17,31 +17,32 @@ public class DropPiece : MonoBehaviour
 
     void Update()
     {
-        isTouching = false;
-
-        if (Input.touchCount > 0)
-        {
-            Touch touch = Input.GetTouch(0);
-            Debug.Log($"Touch detected: Phase={touch.phase}, Position={touch.position}");
-
-            if (touch.phase == TouchPhase.Began || touch.phase == TouchPhase.Stationary || touch.phase == TouchPhase.Moved)
+        if (InputManagerSingleton.instance.IsActionPressed("TouchPress")) {
+            if (!isPicked)
             {
-                Ray ray = Camera.main.ScreenPointToRay(touch.position);
-                if (Physics.Raycast(ray, out RaycastHit hit))
+                Vector2 currentTouchPosition = InputManagerSingleton.instance.GetActionPosition("TouchPosition");
+                if (Physics.Raycast(Camera.main.ScreenPointToRay(currentTouchPosition), out RaycastHit raycastHit))
                 {
-                    if (hit.transform == transform)
-                    {
-                        isTouching = true;
-                    }
+                    isPicked = raycastHit.collider.gameObject == gameObject;
                 }
             }
+        } else
+        {
+            isPicked = false;
         }
 
-        // Move cube up while touching, return to original position otherwise
-        Vector3 targetPos = isTouching
-            ? initialPosition + Vector3.up * moveAmount
-            : initialPosition;
+        Vector3 targetPosition = initialPosition;
+        if (isPicked)
+        {
+            Vector2 currentTouchPosition = InputManagerSingleton.instance.GetActionPosition("TouchPosition");
 
-        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * moveSpeed);
+            float localZ = Camera.main.transform.InverseTransformPoint(transform.position).z;
+            Vector3 worldTouchPosition = Camera.main.ScreenToWorldPoint(new Vector3(currentTouchPosition.x, currentTouchPosition.y, localZ));
+            worldTouchPosition.z = transform.position.z;
+
+            targetPosition = worldTouchPosition + Vector3.up * moveAmount;
+        }
+        
+        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * moveSpeed);
     }
 }
