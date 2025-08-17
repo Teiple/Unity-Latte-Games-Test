@@ -118,12 +118,12 @@ namespace Jelly
         {
             if (column < 0 || column >= columns || row < 0 || row >= rows)
             {
-                return null; // Obstacle
+                return null;
             }
             int cellIndex = cells[column + row * columns];
             if (cellIndex < 0 || cellIndex >= blocks.Count)
             {
-                return null; // Obstacle or empty
+                return null;
             }
             return blocks[cellIndex];
         }
@@ -142,15 +142,14 @@ namespace Jelly
     // A block of jelly, consisting of multiple colored chunks.
     public class Block
     {
-        private BlockVariant blockVariant;
+        private BlockVariant variant;
         private List<Chunk> chunks;
         private List<Chunk> left;
         private List<Chunk> right;
         private List<Chunk> top;
         private List<Chunk> bottom;
-
-
-        public BlockVariant BlockVariant { get { return blockVariant; } }
+        
+        public BlockVariant Variant { get { return variant; } }
 
 
         public Block(string colorCharCodes)
@@ -185,7 +184,7 @@ namespace Jelly
 
                 SetAllByIndices(getDir);
                 
-                blockVariant = BlockVariant.Single;
+                variant = BlockVariant.Single;
                 return;
             }
 
@@ -209,7 +208,7 @@ namespace Jelly
                 };
                 SetAllByIndices(getDir);
 
-                blockVariant = BlockVariant.DoubleHorizontal;
+                variant = BlockVariant.DoubleHorizontal;
                 return;
             }
             // 2. Vertical: Ex:
@@ -231,7 +230,7 @@ namespace Jelly
                 };
                 SetAllByIndices(getDir);
 
-                blockVariant = BlockVariant.DoubleVertical;
+                variant = BlockVariant.DoubleVertical;
                 return;
             }
 
@@ -255,7 +254,7 @@ namespace Jelly
                 };
                 SetAllByIndices(getDir);
 
-                blockVariant = BlockVariant.TripleLeft;
+                variant = BlockVariant.TripleLeft;
                 return;
             }
             // Pos:    Color:
@@ -277,7 +276,7 @@ namespace Jelly
                 };
                 SetAllByIndices(getDir);
 
-                blockVariant = BlockVariant.TripleTop;
+                variant = BlockVariant.TripleTop;
                 return;
             }
             // Pos:    Color:
@@ -299,7 +298,7 @@ namespace Jelly
                 };
                 SetAllByIndices(getDir);
 
-                blockVariant = BlockVariant.TripleRight;
+                variant = BlockVariant.TripleRight;
                 return;
             }
             // Pos:    Color:
@@ -321,7 +320,7 @@ namespace Jelly
                 };
                 SetAllByIndices(getDir);
 
-                blockVariant = BlockVariant.TripleBottom;
+                variant = BlockVariant.TripleBottom;
                 return;
             }
 
@@ -371,6 +370,20 @@ namespace Jelly
                 return 0;
             }
             return chunks.Count;
+        }
+
+        public string GetColorCharCodes()
+        {
+            if (chunks == null || chunks.Count == 0)
+            {
+                return "????";
+            }
+            string colorCodes = "";
+            foreach (Chunk chunk in chunks)
+            {
+                colorCodes += (char) chunk.ColorCode;
+            }
+            return colorCodes;
         }
 
         private void SetAllByIndices(int[][] getDir)

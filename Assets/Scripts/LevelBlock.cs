@@ -8,18 +8,17 @@ public class LevelBlock : MonoBehaviour
 {
     private Jelly.Block block;
     [SerializeField] private bool isInitialized = false;
-    // Example color codes, can be set in the inspector
-    [SerializeField] private string colorCharCodes = "rrggbbyy";
+    [SerializeField] private string colorCharCodes = "";
 
-    public void Initialize(string colorCharCodes)
+    public void Initialize(Jelly.Block block)
     {
-        if (isInitialized)
+        if (isInitialized || block == null)
         {
             return;
         }
 
-        this.colorCharCodes = colorCharCodes;
-        block = new Jelly.Block(colorCharCodes);
+        this.block = block;
+        colorCharCodes = block.GetColorCharCodes();
 
         int chunkCount = block.GetChunkCount();
         MeshRenderer[] chunkMeshes = GetComponentsInChildren<MeshRenderer>();
@@ -37,12 +36,4 @@ public class LevelBlock : MonoBehaviour
         isInitialized = true;
     }
 
-    private void Start()
-    {
-        if (!isInitialized)
-        {
-            Initialize(colorCharCodes);
-            isInitialized = true;
-        }
-    }
 }

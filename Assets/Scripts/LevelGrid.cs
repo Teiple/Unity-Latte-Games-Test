@@ -43,9 +43,13 @@ public class LevelGrid : MonoBehaviour
                 // Create block if the cell is not empty
                 if (cell != (int) Jelly.CellMarker.Empty)
                 {
-                    Jelly.BlockVariant blockVariant = grid.GetBlock(row, col).BlockVariant;
-                    GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab((Jelly.BlockVariant) cell);
-                    Instantiate(prefab, gridTile.transform);
+                    Jelly.Block block = grid.GetBlock(row, col);
+                    Jelly.BlockVariant blockVariant = block.Variant;
+                    GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
+                    GameObject levelBlockGameObj = Instantiate(prefab, gridTile.transform);
+                    levelBlockGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
+                    LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
+                    levelBlock.Initialize(block);
                 }
             }
         }
