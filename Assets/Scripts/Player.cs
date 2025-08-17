@@ -100,8 +100,6 @@ public class Player : MonoBehaviour
             return;
         }
 
-        Debug.Log($"Block dropped at cell: {cell.x}, {cell.y}");
-
         levelGrid.UnSetHightlight();
 
         // Transfer block data to the grid

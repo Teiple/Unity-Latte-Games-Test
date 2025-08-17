@@ -1,3 +1,4 @@
+using Jelly;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,8 +10,7 @@ public class LevelGrid : MonoBehaviour
     [SerializeField] private GameObject gridTileHightlighterPrefab;
     [SerializeField] private TextAsset layoutFile;
     [SerializeField] private float tileSize = 1.0f;
-    // The link between the grid occupiable cells and the grid tile transforms
-    private Dictionary<Vector2Int, Transform> gridTileTransforms = new Dictionary<Vector2Int, Transform>();
+    private Dictionary<Vector2Int, Transform> coordsToGridTileTransforms;
 
 
     private Jelly.Grid grid;
@@ -24,6 +24,7 @@ public class LevelGrid : MonoBehaviour
         }
 
         grid = new Jelly.Grid(layoutFile);
+        coordsToGridTileTransforms = new Dictionary<Vector2Int, Transform>();
 
         // Create grid tiles & blocks
         for (int row = 0; row < grid.Rows; row++)
@@ -42,13 +43,23 @@ public class LevelGrid : MonoBehaviour
                 // Set position, make them center
                 gridTileGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
                 gridTileGameObj.transform.localPosition = GetPositionForCell(row, col);
-                gridTileTransforms[new Vector2Int(row, col)] = gridTileGameObj.transform;
+                coordsToGridTileTransforms[new Vector2Int(row, col)] = gridTileGameObj.transform;
 
                 // Create block if the cell is not empty
                 if (cell != (int) Jelly.CellMarker.Empty)
                 {
                     Jelly.Block block = grid.GetBlock(row, col);
                     CreateLevelBlock(gridTileGameObj.transform, block);
+
+                    if (row == 2 && col == 1)
+                    {
+                        Chunk[] leftChunks = block.GetLeft();
+                        string leftColorCodes = string.Join("", Array.ConvertAll(leftChunks, chunk => chunk.ColorCode.ToString()));
+                        Debug.Log($"Left Chunks Color Codes: {leftColorCodes}");
+                        Chunk[] rightChunks = block.GetRight();
+                        string rightColorCodes = string.Join("", Array.ConvertAll(rightChunks, chunk => chunk.ColorCode.ToString()));
+                        Debug.Log($"Right Chunks Color Codes: {rightColorCodes}");
+                    }
                 }
             }
         }
@@ -131,9 +142,15 @@ public class LevelGrid : MonoBehaviour
     {
         if (grid.TryInsertBlock(row, column, block))
         {
-            Transform gridTile = gridTileTransforms[new Vector2Int(row, column)];
+            Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
             CreateLevelBlock(gridTile, block);
         }
+        Resolve();
+    }
+
+    public void Resolve()
+    {
+        grid.Resolve();
     }
 
 
@@ -142,7 +159,7 @@ public class LevelGrid : MonoBehaviour
         Jelly.BlockVariant blockVariant = block.Variant;
         GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
         GameObject levelBlockGameObj = Instantiate(prefab, gridTile.transform);
-        levelBlockGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
+        //levelBlockGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
         LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
         levelBlock.Initialize(block);
     }

@@ -24,6 +24,7 @@ namespace Jelly
     
     public enum BlockVariant
     {
+        None,
         Single,
         DoubleHorizontal,
         DoubleVertical,
@@ -168,24 +169,93 @@ namespace Jelly
             cells[cellIndex] = blocks.Count;
             blocks.Add(block);
             AddNewSetsForBlock(block);
-            ResolveAt(row, column);
-
-            // Print debug information
-            Chunk[][] chunkSetArray = chunkSet.GetAllSets();
-            for (int i = 0; i < chunkSetArray.Length; i++)
-            {
-                Debug.Log($"Chunk Set {i}:");
-                foreach (Chunk chunk in chunkSetArray[i])
-                {
-                    Debug.Log($"  Chunk Color: {chunk.ColorCode}");
-                }
-            }
-
+            
             return true;
         }
 
-        
-        private void ResolveAt(int row, int column)
+        public void Resolve()
+        {
+            Debug.Log("Initial state of grid:");
+            for (int row = 0; row < rows; row++)
+            {
+                string rowString = "";
+                for (int column = 0; column < columns; column++)
+                {
+                    int cellIndex = column + row * columns;
+                    rowString += $"{cells[cellIndex]} ";
+                }
+                Debug.Log(rowString);
+            }
+
+            UnionAllChunks();
+            
+            Block[] involvedBlocks = RemoveNonDistinctChunks();
+            Block[] blockArr = blocks.ToArray();
+
+            // Remove blocks that have no chunks left
+            List<Block> blocksToRemove = new List<Block>();
+            List<int> shiftingHistory = new List<int>();
+
+            foreach (Block block in involvedBlocks)
+            {
+                int blockIndex = blocks.IndexOf(block);
+                
+                if (blockIndex < 0 || blockIndex >= blocks.Count)
+                {
+                    continue;
+                }
+                if (block.Variant == BlockVariant.None)
+                {
+                    // Set the cell referenced this block to Empty
+                    for (int i = 0; i < cells.Length; i++)
+                    {
+                        if (cells[i] == blockIndex)
+                        {
+                            cells[i] = (int)CellMarker.Empty;
+                            break;
+                        }
+                    }
+                    blockArr[blockIndex] = null;
+                    blocksToRemove.Add(block);
+                }
+            }
+
+            Debug.Log($"Initial blocks count: {blocks.Count}");
+            Debug.Log($"Blocks to remove: {blocksToRemove.Count}");
+
+            blocks = new List<Block>();
+            for (int i = 0; i < blockArr.Length; i++)
+            {
+                if (blockArr[i] != null)
+                {
+                    blocks.Add(blockArr[i]);
+                    for (int j = 0; j < cells.Length; j++)
+                    {
+                        if (cells[j] == i)
+                        {
+                            cells[j] = blocks.Count - 1;
+                        }
+                    }
+                }
+            }
+
+            // Print the final state of the grid
+            Debug.Log("Final state of the grid:");
+            for (int row = 0; row < rows; row++)
+            {
+                string rowString = "";
+                for (int column = 0; column < columns; column++)
+                {
+                    int cellIndex = column + row * columns;
+                    rowString += $"{cells[cellIndex]} ";
+                }
+                Debug.Log(rowString);
+            }
+            Debug.Log($"Blocks count: {blocks.Count}");
+        }
+
+
+        private void UnionChunksAt(int row, int column)
         {
             if (column < 0 || column >= columns || row < 0 || row >= rows)
             {
@@ -227,6 +297,8 @@ namespace Jelly
                 {
                     case (int) Direction.Left:
                         {
+                            Debug.Log($"Unioning chunks at ({row}, {column}) with neighbour at ({neighbourRow}, {neighbourColumn}) in Left direction");
+                            bool unioned = false;
                             foreach (Chunk chunk in block.GetLeft())
                             {
                                 foreach (Chunk neighbourChunk in neighbourBlock.GetRight())
@@ -234,9 +306,21 @@ namespace Jelly
                                     if (chunk.ColorCode == neighbourChunk.ColorCode)
                                     {
                                         chunkSet.Union(chunk, neighbourChunk);
+                                        unioned = true;
                                     }
                                 }
                             }
+                            if (!unioned)
+                            {
+                                Debug.Log($"No matching chunks found for union at ({row}, {column}) with neighbour at ({neighbourRow}, {neighbourColumn}) in Left direction");
+                                Chunk[] myLeft = block.GetLeft();
+                                Chunk[] neighbourRight = neighbourBlock.GetRight();
+                                string myLeftString = string.Join(", ", Array.ConvertAll(myLeft, c => c.ColorCode.ToString()));
+                                Debug.Log($"My Left Chunks: {myLeftString}");
+                                string neighbourRightString = string.Join(", ", Array.ConvertAll(neighbourRight, c => c.ColorCode.ToString()));
+                                Debug.Log($"Neighbour Right Chunks: {neighbourRightString}");
+                            }
+
                             break;
                         }
                     case (int) Direction.Right:
@@ -269,12 +353,10 @@ namespace Jelly
                         }
                     case (int) Direction.Down:
                         {
-                            Debug.Log($"Resolving Down at {row}, {column}");
                             foreach (Chunk chunk in block.GetBottom())
                             {
                                     foreach (Chunk neighbourChunk in neighbourBlock.GetTop())
                                     {
-                                        Debug.Log($"Comparing {chunk.ColorCode} with {neighbourChunk.ColorCode}");
                                         if (chunk.ColorCode == neighbourChunk.ColorCode)
                                         {
                                             chunkSet.Union(chunk, neighbourChunk);
@@ -285,6 +367,69 @@ namespace Jelly
                         }
                 }
             }
+        }
+
+        private void UnionAllChunks()
+        {
+            for (int row = 0; row < rows; row++)
+            {
+                for (int column = 0; column < columns; column++)
+                {
+                    UnionChunksAt(row, column);
+                }
+            }
+
+            // Print sets
+            Chunk[][] chunkSetArr = chunkSet.GetAllSets();
+            foreach (Chunk[] chunkSet in chunkSetArr)
+            {
+                if (chunkSet.Length == 0)
+                {
+                    continue;
+                }
+                string setString = "1. Set: ";
+                foreach (Chunk chunk in chunkSet)
+                {
+                    setString += $"{chunk.ColorCode} ";
+                }
+                Debug.Log(setString);
+            }
+        }
+
+        private Block[] RemoveNonDistinctChunks()
+        {
+            HashSet<Block> involvedBlocks = new HashSet<Block>();
+            Chunk[] removedChunks = chunkSet.GetAndRemoveNonDistinctElements();
+            foreach (Chunk removedChunk in removedChunks)
+            {
+                involvedBlocks.Add(removedChunk.ParentBlock);
+                removedChunk.RemoveFromBlock();
+            }
+            if (involvedBlocks.Count == 0)
+            {
+                return new Block[0];
+            }
+
+            Block[] blocksToReturn = new Block[involvedBlocks.Count];
+            involvedBlocks.CopyTo(blocksToReturn);
+
+            // Print sets
+            Chunk[][] chunkSetArr = chunkSet.GetAllSets();
+            foreach (Chunk[] chunkSet in chunkSetArr)
+            {
+                if (chunkSet.Length == 0)
+                {
+                    continue;
+                }
+                string setString = "2. Set: ";
+                foreach (Chunk chunk in chunkSet)
+                {
+                    setString += $"{chunk.ColorCode} ";
+                }
+                Debug.Log(setString);
+            }
+
+            return blocksToReturn;
         }
 
         private void AddNewSetsForBlock(Block block)
@@ -304,13 +449,15 @@ namespace Jelly
     // A block of jelly, consisting of multiple colored chunks.
     public class Block
     {
+        public delegate void BlockVariantChanged(Block block, BlockVariant newVariant);
+        public delegate void BlockPreparedRemoval(Block block);
+        public event BlockVariantChanged VariantChanged;
+        public event BlockPreparedRemoval PreparedRemoval;
+
         private BlockVariant variant;
         private List<Chunk> chunks;
-        private List<Chunk> left;
-        private List<Chunk> right;
-        private List<Chunk> top;
-        private List<Chunk> bottom;
-        
+
+
         public BlockVariant Variant { get { return variant; } }
 
 
@@ -320,7 +467,7 @@ namespace Jelly
             {
                 return;
             }
-
+            
             chunks = new List<Chunk>();
 
             char c0 = colorCharCodes[0];
@@ -335,17 +482,6 @@ namespace Jelly
             {
                 chunks.Add(new Chunk(this, (ColorCode) c0));
 
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 0, 1 },
-                    new int[] { 0, 1 },
-                    new int[] { 0 },
-                    new int[] { 0 }
-                };
-
-                SetAllByIndices(getDir);
-                
                 variant = BlockVariant.Single;
                 return;
             }
@@ -360,16 +496,6 @@ namespace Jelly
                 chunks.Add(new Chunk(this, (ColorCode) c0));
                 chunks.Add(new Chunk(this, (ColorCode) c2));
 
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 0, 1 },
-                    new int[] { 0, 1 },
-                    new int[] { 0 },
-                    new int[] { 1 }
-                };
-                SetAllByIndices(getDir);
-
                 variant = BlockVariant.DoubleHorizontal;
                 return;
             }
@@ -382,21 +508,12 @@ namespace Jelly
                 chunks.Add(new Chunk(this, (ColorCode) c0));
                 chunks.Add(new Chunk(this, (ColorCode) c1));
                 
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 0 },
-                    new int[] { 1 },
-                    new int[] { 0, 1 },
-                    new int[] { 0, 1 }
-                };
-                SetAllByIndices(getDir);
-
                 variant = BlockVariant.DoubleVertical;
                 return;
             }
 
             // Three colored block. 4 Variants:
+            // 1. TripleLeft
             // Pos:    Color:
             // 01   -> 01
             // 23      02
@@ -406,19 +523,10 @@ namespace Jelly
                 chunks.Add(new Chunk(this, (ColorCode) c1));
                 chunks.Add(new Chunk(this, (ColorCode) c3));
 
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 0 },
-                    new int[] { 1, 2 },
-                    new int[] { 0, 1 },
-                    new int[] { 0, 2 }
-                };
-                SetAllByIndices(getDir);
-
                 variant = BlockVariant.TripleLeft;
                 return;
             }
+            // 2.TripleTop
             // Pos:    Color:
             // 01   -> 00
             // 23      12
@@ -428,59 +536,31 @@ namespace Jelly
                 chunks.Add(new Chunk(this, (ColorCode) c2));
                 chunks.Add(new Chunk(this, (ColorCode) c3));
 
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 0, 1 },
-                    new int[] { 0, 2 },
-                    new int[] { 0 },
-                    new int[] { 1, 2 }
-                };
-                SetAllByIndices(getDir);
-
                 variant = BlockVariant.TripleTop;
                 return;
             }
+            // 3.TripleRight
             // Pos:    Color:
-            // 01   -> 10
-            // 23      20
+            // 01   -> 01
+            // 23      21
             if (c1 == c3 && c0 != c2 && c0 != c1 && c1 != c2)
             {
-                chunks.Add(new Chunk(this, (ColorCode) c1));
                 chunks.Add(new Chunk(this, (ColorCode) c0));
+                chunks.Add(new Chunk(this, (ColorCode) c1));
                 chunks.Add(new Chunk(this, (ColorCode) c2));
-
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 1, 2 },
-                    new int[] { 0 },
-                    new int[] { 1, 0 },
-                    new int[] { 2, 0 }
-                };
-                SetAllByIndices(getDir);
-
+                
                 variant = BlockVariant.TripleRight;
                 return;
             }
+            // 4.TripleBottom
             // Pos:    Color:
-            // 01   -> 12
-            // 23      00
+            // 01   -> 01
+            // 23      22
             if (c2 == c3 && c0 != c1 && c0 != c2 && c1 != c2)
             {
-                chunks.Add(new Chunk(this, (ColorCode) c2));
                 chunks.Add(new Chunk(this, (ColorCode) c0));
                 chunks.Add(new Chunk(this, (ColorCode) c1));
-
-                // Left - Right - Top - Bottom
-                int[][] getDir =
-                {
-                    new int[] { 1, 0 },
-                    new int[] { 2, 0 },
-                    new int[] { 1, 2 },
-                    new int[] { 0 }
-                };
-                SetAllByIndices(getDir);
+                chunks.Add(new Chunk(this, (ColorCode) c2));
 
                 variant = BlockVariant.TripleBottom;
                 return;
@@ -492,27 +572,166 @@ namespace Jelly
 
         public void RemoveChunk(Chunk chunk)
         {
-            if (chunks.Contains(chunk))
+            int removedChunkIndex = chunks.IndexOf(chunk);
+            if (removedChunkIndex < 0 || removedChunkIndex >= chunks.Count)
             {
-                chunks.Remove(chunk);
+                // Chunk not found
+                return;
             }
-        }
-        public List<Chunk> GetLeft()
-        {
-            return left;
-        }
-        public List<Chunk> GetRight()
-        {
-            return right;
-        }
-        public List<Chunk> GetTop()
-        {
-            return top;
+            chunks.RemoveAt(removedChunkIndex);
+            // Set new variant based on the remaining chunks
+            variant = Expand(variant, removedChunkIndex);
+            
+            VariantChanged?.Invoke(this, variant);
         }
 
-        public List<Chunk> GetBottom()
+        public Chunk[] GetLeft()
         {
-            return bottom;
+            // New direction: There is always a rule for getting all the directions based on the variant.
+            switch (variant)
+            {
+                // 00
+                // 00
+                case BlockVariant.Single:
+                    return new Chunk[] { chunks[0] };
+                // 00
+                // 11
+                case BlockVariant.DoubleHorizontal:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                // 01
+                // 01
+                case BlockVariant.DoubleVertical:
+                    return new Chunk[]{ chunks[0]};
+                // 01
+                // 02
+                case BlockVariant.TripleLeft:
+                    return new Chunk[]{ chunks[0] };
+                // 00
+                // 12
+                case BlockVariant.TripleTop:
+                    return new Chunk[]{ chunks[0], chunks[1] };
+                // 01
+                // 21
+                case BlockVariant.TripleRight:
+                    return new Chunk[]{ chunks[0], chunks[2] };
+                // 01
+                // 22
+                case BlockVariant.TripleBottom:
+                    return new Chunk[] { chunks[0], chunks[2] };
+                default:
+                    return new Chunk[0];
+            }
+        }
+
+        public Chunk[] GetRight()
+        {
+            switch (variant)
+            {
+                // 00
+                // 00
+                case BlockVariant.Single:
+                    return new Chunk[] { chunks[0] };
+                // 00
+                // 11
+                case BlockVariant.DoubleHorizontal:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                // 01
+                // 01
+                case BlockVariant.DoubleVertical:
+                    return new Chunk[] { chunks[1] };
+                // 01
+                // 02
+                case BlockVariant.TripleLeft:
+                    return new Chunk[] { chunks[1], chunks[2] };
+                // 00
+                // 12
+                case BlockVariant.TripleTop:
+                    return new Chunk[] { chunks[0], chunks[2] };
+                // 01
+                // 21
+                case BlockVariant.TripleRight:
+                    return new Chunk[] { chunks[1] };
+                // 01
+                // 22
+                case BlockVariant.TripleBottom:
+                    return new Chunk[] { chunks[1], chunks[2] };
+                default:
+                    return new Chunk[0];
+            }
+        }
+
+        public Chunk[] GetTop()
+        {
+            switch (variant)
+            {
+                // 00
+                // 00
+                case BlockVariant.Single:
+                    return new Chunk[] { chunks[0] };
+                // 00
+                // 11
+                case BlockVariant.DoubleHorizontal:
+                    return new Chunk[] { chunks[0] };
+                // 01
+                // 01
+                case BlockVariant.DoubleVertical:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                // 01
+                // 02
+                case BlockVariant.TripleLeft:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                // 00
+                // 12
+                case BlockVariant.TripleTop:
+                    return new Chunk[] { chunks[0] };
+                // 01
+                // 21
+                case BlockVariant.TripleRight:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                // 01
+                // 22
+                case BlockVariant.TripleBottom:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                default:
+                    return new Chunk[0];
+            }
+        }
+
+        public Chunk[] GetBottom()
+        {
+            switch (variant)
+            {
+                // 00
+                // 00
+                case BlockVariant.Single:
+                    return new Chunk[] { chunks[0] };
+                // 00
+                // 11
+                case BlockVariant.DoubleHorizontal:
+                    return new Chunk[] { chunks[1] };
+                // 01
+                // 01
+                case BlockVariant.DoubleVertical:
+                    return new Chunk[] { chunks[0], chunks[1] };
+                // 01
+                // 02
+                case BlockVariant.TripleLeft:
+                    return new Chunk[] { chunks[0], chunks[2] };
+                // 00
+                // 12
+                case BlockVariant.TripleTop:
+                    return new Chunk[] { chunks[1], chunks[2] };
+                // 01
+                // 21
+                case BlockVariant.TripleRight:
+                    return new Chunk[] { chunks[0], chunks[2] };
+                // 01
+                // 22
+                case BlockVariant.TripleBottom:
+                    return new Chunk[] { chunks[2] };
+                default:
+                    return new Chunk[0];
+            }
         }
 
         public List<Chunk> GetChunks()
@@ -539,40 +758,124 @@ namespace Jelly
             return chunks.Count;
         }
 
-
-        private void SetAllByIndices(int[][] getDir)
+        public void PrepareForRemoval()
         {
-            left = new List<Chunk>();
-            right = new List<Chunk>();
-            top = new List<Chunk>();
-            bottom = new List<Chunk>();
-            for (int i = 0; i < getDir[0].Length; i++)
+            PreparedRemoval?.Invoke(this);
+        }
+
+        // Expand the remain chunks of the block when exactly ONE chunk is removed
+        private BlockVariant Expand(BlockVariant variantBefore, int removedChunkIndex)
+        {
+            switch (variantBefore)
             {
-                if (getDir[0][i] >= 0 && getDir[0][i] < chunks.Count)
-                {
-                    left.Add(chunks[getDir[0][i]]);
-                }
-            }
-            for (int i = 0; i < getDir[1].Length; i++)
-            {
-                if (getDir[1][i] >= 0 && getDir[1][i] < chunks.Count)
-                {
-                    right.Add(chunks[getDir[1][i]]);
-                }
-            }
-            for (int i = 0; i < getDir[2].Length; i++)
-            {
-                if (getDir[2][i] >= 0 && getDir[2][i] < chunks.Count)
-                {
-                    top.Add(chunks[getDir[2][i]]);
-                }
-            }
-            for (int i = 0; i < getDir[3].Length; i++)
-            {
-                if (getDir[3][i] >= 0 && getDir[3][i] < chunks.Count)
-                {
-                    bottom.Add(chunks[getDir[3][i]]);
-                }
+                // In case of Double, the remaining chunk takes over the block.
+                // The block becomes Single (so sad).
+                case BlockVariant.DoubleHorizontal:
+                case BlockVariant.DoubleVertical:
+                    {
+                        return BlockVariant.Single;
+                    }
+                case BlockVariant.TripleLeft:
+                    {
+                        // If it is a TripleLeft, then its chunk order is like this:
+                        // 01
+                        // 02
+                        // (See Block's constructor for more info)
+
+                        if (removedChunkIndex == 0)
+                        {
+                            // Turns into:
+                            // 11
+                            // 22
+                            return BlockVariant.DoubleHorizontal;
+                        } else
+                        {
+                            // Turns into:
+                            // 02 or 01
+                            // 02    01
+                            return BlockVariant.DoubleVertical;
+                        }
+
+                    }
+                case BlockVariant.TripleTop:
+                    {
+                        // If it is a TripleTop, then its chunk order is like this:
+                        // 00
+                        // 12
+                        // (See Block's constructor for more info)
+
+                        if (removedChunkIndex == 0)
+                        {
+                            // Turns into:
+                            // 12
+                            // 12
+                            return BlockVariant.DoubleVertical;
+                        } else
+                        {
+                            // Turns into:
+                            // 00 or 00
+                            // 22    11
+                            return BlockVariant.DoubleHorizontal;
+                        }
+                    }
+                case BlockVariant.TripleRight:
+                    {
+                        // If it is a TripleRight, then its chunk order is like this:
+                        // 01
+                        // 21
+                        // (See Block's constructor for more info)
+                        
+                        if (removedChunkIndex == 0)
+                        {
+                            // Turns into:
+                            // 21
+                            // 21
+                            return BlockVariant.DoubleVertical;
+                        } else if (removedChunkIndex == 1)
+                        {
+                            // Turns into:
+                            // 00
+                            // 22
+                            return BlockVariant.DoubleHorizontal;
+                        } else
+                        {
+                            // Turns into:
+                            // 01
+                            // 01
+                            return BlockVariant.DoubleVertical;
+                        }
+                    }
+                case BlockVariant.TripleBottom:
+                    {
+                        // If it is a TripleTop, then its chunk order is like this:
+                        // 01
+                        // 22
+                        // (See Block's constructor for more info)
+
+                        if (removedChunkIndex == 0)
+                        {
+                            // Turns into:
+                            // 11
+                            // 22
+                            return BlockVariant.DoubleHorizontal;
+                        }
+                        else if (removedChunkIndex == 1)
+                        {
+                            // Turns into:
+                            // 00
+                            // 22
+                            return BlockVariant.DoubleHorizontal;
+                        }
+                        else
+                        {
+                            // Turns into:
+                            // 01
+                            // 01
+                            return BlockVariant.DoubleVertical;
+                        }
+                    }
+                default:
+                    return BlockVariant.None;
             }
         }
     }
@@ -580,10 +883,15 @@ namespace Jelly
     // A colored chunk of a jelly block
     public class Chunk : IComparable<Chunk>
     {
-        public ColorCode ColorCode { get { return colorCode; } }
-
         private Block parentBlock;
         private ColorCode colorCode;
+        
+
+        public Block ParentBlock { get { return parentBlock; } }
+
+
+        public ColorCode ColorCode { get { return colorCode; } }
+
 
         public Chunk(Block parentBlock, ColorCode colorCode)
         {

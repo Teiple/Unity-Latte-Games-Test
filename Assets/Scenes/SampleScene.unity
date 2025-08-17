@@ -369,19 +369,19 @@ MonoBehaviour:
   - colorCode: 103
     materialForChunk: {fileID: 2100000, guid: d74475048028c8b429ee6fbf0427fc95, type: 2}
   blockVariantPrefabs:
-  - variant: 0
-    prefab: {fileID: 7459440573157257595, guid: afd89a4d15f20ab4e92bd4bba8328cb3, type: 3}
   - variant: 1
-    prefab: {fileID: 4271777160278144455, guid: 5cf5e7f6d858fdf4c9497e8c163ad1c0, type: 3}
+    prefab: {fileID: 7459440573157257595, guid: afd89a4d15f20ab4e92bd4bba8328cb3, type: 3}
   - variant: 2
-    prefab: {fileID: 5185743711686100685, guid: b25962ff910db3247845b5c614e318fd, type: 3}
+    prefab: {fileID: 4271777160278144455, guid: 5cf5e7f6d858fdf4c9497e8c163ad1c0, type: 3}
   - variant: 3
-    prefab: {fileID: 7477432470644734781, guid: b12461201157c344e9717f0261ccffa2, type: 3}
-  - variant: 5
-    prefab: {fileID: 2197646751227726650, guid: 9e578eb9bf1b67a48b167e642ef560c1, type: 3}
+    prefab: {fileID: 5185743711686100685, guid: b25962ff910db3247845b5c614e318fd, type: 3}
   - variant: 4
-    prefab: {fileID: 7350583419438268412, guid: ebae775821762724297a64149ab155af, type: 3}
+    prefab: {fileID: 7477432470644734781, guid: b12461201157c344e9717f0261ccffa2, type: 3}
   - variant: 6
+    prefab: {fileID: 2197646751227726650, guid: 9e578eb9bf1b67a48b167e642ef560c1, type: 3}
+  - variant: 5
+    prefab: {fileID: 7350583419438268412, guid: ebae775821762724297a64149ab155af, type: 3}
+  - variant: 7
     prefab: {fileID: 7751257926710169064, guid: e6b52e08d6009c243a3a2cd10e2b6403, type: 3}
   defaultChunkMaterial: {fileID: 2100000, guid: 15ac993b6d4716f469d02c2f86d84867, type: 2}
 --- !u!4 &915705529

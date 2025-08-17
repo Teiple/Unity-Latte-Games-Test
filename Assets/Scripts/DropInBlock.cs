@@ -60,7 +60,8 @@ public class DropInBlock : MonoBehaviour
         GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
         GameObject levelBlockGameObj = Instantiate(prefab, transform);
         LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
-        levelBlock.Initialize(block);
+        // Make isNonFunctional true to prevent the block events from being registered
+        levelBlock.Initialize(block, true);
     }
 
     public void SetControlledTargetPosition(Vector3 position)

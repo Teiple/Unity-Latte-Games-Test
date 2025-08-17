@@ -110,18 +110,33 @@ namespace DataStructures
             }
 
             // Added from me!
-            public T[] FindSetData(T data)
+            public T[] GetAndRemoveNonDistinctElements()
             {
-                var root = FindSet(nodes[data]); // representative node
-                var list = new List<T>();
+                var groups = new Dictionary<Node<T>, List<T>>();
 
                 foreach (var kvp in nodes)
                 {
-                    if (FindSet(kvp.Value) == root)
-                        list.Add(kvp.Key);
+                    var root = FindSet(kvp.Value);
+                    if (!groups.ContainsKey(root))
+                        groups[root] = new List<T>();
+
+                    groups[root].Add(kvp.Key);
                 }
 
-                return list.ToArray();
+                var result = new List<T>();
+                foreach (var group in groups.Values)
+                {
+                    if (group.Count > 1)
+                    {
+                        result.AddRange(group);
+                        foreach (var item in group)
+                        {
+                            nodes.Remove(item);
+                        }
+                    }
+                }
+
+                return result.ToArray();
             }
 
             public T[][] GetAllSets()

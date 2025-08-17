@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4564907549307216498}
   - component: {fileID: 8478068701549364264}
   m_Layer: 0
-  m_Name: ChunkMesh0
+  m_Name: ChunkMesh2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 131537994396261457}
   - component: {fileID: 1607122986052938282}
   m_Layer: 0
-  m_Name: ChunkMesh2
+  m_Name: ChunkMesh1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -178,7 +178,7 @@ GameObject:
   - component: {fileID: 5587816479783711093}
   - component: {fileID: 4037012958761226369}
   m_Layer: 0
-  m_Name: ChunkMesh1
+  m_Name: ChunkMesh0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -279,9 +279,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4261632440373280112}
   - {fileID: 3846859582511484072}
   - {fileID: 337361936216890472}
+  - {fileID: 4261632440373280112}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2609311652230424764
@@ -297,4 +297,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isInitialized: 0
-  colorCharCodes: rbrg
