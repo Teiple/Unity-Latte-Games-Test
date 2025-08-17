@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class InputManagerSingleton : MonoBehaviour
+public class InputSingleton : MonoBehaviour
 {
-    public static InputManagerSingleton instance = null;
+    public static InputSingleton instance = null;
     
     private PlayerInput playerInput = null;
 

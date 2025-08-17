@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 924378291352940839}
   - component: {fileID: 2198209766995457534}
   m_Layer: 0
-  m_Name: TilePrefab
+  m_Name: TileHightlighterPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -62,7 +62,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dd22dbeba2388e64c833bcdee0133708, type: 2}
+  - {fileID: 2100000, guid: d3fa51add0e9a304d95d9a5f8568c418, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
