@@ -1,72 +1,67 @@
+using Jelly;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class DropInBlock : MonoBehaviour
 {
-    [SerializeField] private float moveAmount = 1.0f;
+    [SerializeField] private string colorCharCodes;
     [SerializeField] private float moveSpeed = 20.0f;
 
-    private bool isPicked = false;
-    private Vector3 initialPosition;
+    private bool isControlled = false;
+    private Vector3 targetPosition;
 
-
-    void Start()
-    {
-        initialPosition = transform.position;
-    }
 
     void Update()
     {
-        if (InputSingleton.instance.IsActionPressed("TouchPress")) {
-            if (!isPicked)
-            {
-                Vector2 currentTouchPosition = InputSingleton.instance.GetActionPosition("TouchPosition");
-                if (Physics.Raycast(Camera.main.ScreenPointToRay(currentTouchPosition), out RaycastHit raycastHit))
-                {
-                    isPicked = raycastHit.collider.gameObject == gameObject;
-                }
-            }
+        if (isControlled)
+        {
+            transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * moveSpeed);
         } else
         {
-            if (isPicked)
-            {
-                OnBlockDropped(transform.position);
-            }
-            isPicked = false;
+            transform.position = Vector3.Lerp(transform.position, transform.parent.position, Time.deltaTime * moveSpeed);
         }
 
-        Vector3 targetPosition = initialPosition;
-        if (isPicked)
-        {
-            Vector2 currentTouchPosition = InputSingleton.instance.GetActionPosition("TouchPosition");
-
-            float localZ = Camera.main.transform.InverseTransformPoint(transform.position).z;
-            Vector3 worldTouchPosition = Camera.main.ScreenToWorldPoint(new Vector3(currentTouchPosition.x, currentTouchPosition.y, localZ));
-            worldTouchPosition.z = transform.position.z;
-
-            targetPosition = worldTouchPosition + Vector3.up * moveAmount;
-
-            OnBlockDragged(targetPosition);
-        }
-        
-        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * moveSpeed);
+        isControlled = false;
     }
 
 
-    private void OnBlockDropped(Vector3 dropPosition)
+    public void OnBlockDropped(Vector3 dropPosition)
     {
         LevelGrid levelGrid = GameSingleton.instance.CurrentLevelGrid;
 
         levelGrid.UnSetHightlight();
     }
 
-    private void OnBlockDragged(Vector3 dragPosition)
+    public void OnBlockDragged(Vector3 dragPosition)
     {
         LevelGrid levelGrid = GameSingleton.instance.CurrentLevelGrid;
 
-        Vector2Int cell = levelGrid.FindClosestCell(dragPosition);
+        Vector2Int cell = levelGrid.FindNearbyEmptyCell(dragPosition);
         levelGrid.SetHightlightOnCell(cell.x, cell.y);
     }
+    
 
+    public void Initialize(string colorCharCodes)
+    {
+        if (colorCharCodes == null || colorCharCodes.Length != 4)
+        {
+            return;
+        }
+
+        this.colorCharCodes = colorCharCodes;
+        Block block = new Block(colorCharCodes);
+        Jelly.BlockVariant blockVariant = block.Variant;
+        GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
+        GameObject levelBlockGameObj = Instantiate(prefab, transform);
+        LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
+        levelBlock.Initialize(block);
+    }
+
+    public void SetControlledTargetPosition(Vector3 position)
+    {
+        isControlled = true;
+        targetPosition = position;
+    }
 }

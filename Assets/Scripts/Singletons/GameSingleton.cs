@@ -27,6 +27,7 @@ public class GameSingleton : MonoBehaviour
     [SerializeField] private JellyColor[] jellyColorMaterials;
     [SerializeField] private LevelBlockVariantPrefab[] blockVariantPrefabs;
     [SerializeField] private Material defaultChunkMaterial;
+    
 
     public LevelGrid CurrentLevelGrid { get { return currentLevelGrid; } }
 

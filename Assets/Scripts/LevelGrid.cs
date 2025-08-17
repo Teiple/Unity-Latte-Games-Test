@@ -67,7 +67,7 @@ public class LevelGrid : MonoBehaviour
 
 
     // .x for row index; .y for column index
-    public Vector2Int FindClosestCell(Vector3 fromPosition)
+    public Vector2Int FindNearbyEmptyCell(Vector3 fromPosition)
     {
         Vector3 localPos = transform.InverseTransformPoint(fromPosition);
 
@@ -77,8 +77,15 @@ public class LevelGrid : MonoBehaviour
         int row = Mathf.RoundToInt(rowFloat);
         int col = Mathf.RoundToInt(colFloat);
 
-        row = Mathf.Clamp(row, 0, grid.Rows - 1);
-        col = Mathf.Clamp(col, 0, grid.Columns - 1);
+        if (grid.GetCell(row, col) != (int) Jelly.CellMarker.Empty)
+        {
+            return new Vector2Int(-1, -1);
+        }
+
+        if (row < 0 || row >= grid.Rows || col < 0 || col >= grid.Columns)
+        {
+            return new Vector2Int(-1, -1);
+        }
 
         return new Vector2Int(row, col);
     }
