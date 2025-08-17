@@ -9,6 +9,9 @@ public class LevelGrid : MonoBehaviour
     [SerializeField] private GameObject gridTileHightlighterPrefab;
     [SerializeField] private TextAsset layoutFile;
     [SerializeField] private float tileSize = 1.0f;
+    // The link between the grid occupiable cells and the grid tile transforms
+    private Dictionary<Vector2Int, Transform> gridTileTransforms = new Dictionary<Vector2Int, Transform>();
+
 
     private Jelly.Grid grid;
     private GameObject hightlighter;
@@ -35,21 +38,17 @@ public class LevelGrid : MonoBehaviour
                     continue;
                 }
                 // Create a grid tile
-                GameObject gridTile = Instantiate(gridTilePrefab, transform);
+                GameObject gridTileGameObj = Instantiate(gridTilePrefab, transform);
                 // Set position, make them center
-                gridTile.transform.localScale = Vector3.one * (tileSize - 0.1f);
-                gridTile.transform.localPosition = GetPositionForCell(row, col);
+                gridTileGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
+                gridTileGameObj.transform.localPosition = GetPositionForCell(row, col);
+                gridTileTransforms[new Vector2Int(row, col)] = gridTileGameObj.transform;
 
                 // Create block if the cell is not empty
                 if (cell != (int) Jelly.CellMarker.Empty)
                 {
                     Jelly.Block block = grid.GetBlock(row, col);
-                    Jelly.BlockVariant blockVariant = block.Variant;
-                    GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
-                    GameObject levelBlockGameObj = Instantiate(prefab, gridTile.transform);
-                    levelBlockGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
-                    LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
-                    levelBlock.Initialize(block);
+                    CreateLevelBlock(gridTileGameObj.transform, block);
                 }
             }
         }
@@ -126,5 +125,25 @@ public class LevelGrid : MonoBehaviour
         }
 
         hightlighter.SetActive(false);
+    }
+
+    public void InsertBlock(int row, int column, Jelly.Block block)
+    {
+        if (grid.TryInsertBlock(row, column, block))
+        {
+            Transform gridTile = gridTileTransforms[new Vector2Int(row, column)];
+            CreateLevelBlock(gridTile, block);
+        }
+    }
+
+
+    private void CreateLevelBlock(Transform gridTile, Jelly.Block block)
+    {
+        Jelly.BlockVariant blockVariant = block.Variant;
+        GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
+        GameObject levelBlockGameObj = Instantiate(prefab, gridTile.transform);
+        levelBlockGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
+        LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
+        levelBlock.Initialize(block);
     }
 }

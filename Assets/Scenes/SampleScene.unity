@@ -538,9 +538,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   offsetAmount: 1
-  dragSpeed: 20
   spawnPointLeft: {fileID: 782265418}
   spawnPointRight: {fileID: 483366834}
+  dropInBlockPrefab: {fileID: 424069029011376012, guid: 051e1fac9a6c0d9478c95bdb55539ca6, type: 3}
+  dropSequenceFile: {fileID: 4900000, guid: 9298585b113c4d64097085f72f05891f, type: 3}
 --- !u!1 &1509875747
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,7 +1,9 @@
 using Jelly;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class Player : MonoBehaviour
 {
@@ -9,9 +11,33 @@ public class Player : MonoBehaviour
     [SerializeField] private Transform spawnPointLeft;
     [SerializeField] private Transform spawnPointRight;
     [SerializeField] private GameObject dropInBlockPrefab;
+    [SerializeField] private TextAsset dropSequenceFile;
 
     private DropInBlock currentSelection;
     private Transform currentSpawnPoint;
+    private string[] dropSequence; // Drop sequence must ensure the completion of the level in at least one way
+    private int currentDropIndex = 0;
+
+    private void Awake()
+    {
+        char[] charDelimiters = new[] { '\n', '\r' };
+        StringSplitOptions splitOptions = StringSplitOptions.RemoveEmptyEntries;
+        string[] lines = dropSequenceFile.text.Split(charDelimiters, splitOptions);
+
+        if (lines.Length == 0 || lines.Length % 2 != 0 || lines[0].Length != 2)
+        {
+            return;
+        }
+
+        int rows = lines.Length / 2;
+        dropSequence = new string[rows];
+        // Get a colorCharCodes each two lines
+        for (int i = 0; i < rows; i++)
+        {
+            string colorCharCodes = lines[i * 2].Substring(0, 2) + lines[i * 2 + 1].Substring(0, 2);
+            dropSequence[i] = colorCharCodes;
+        }
+    }
 
     void Start()
     {
@@ -74,9 +100,16 @@ public class Player : MonoBehaviour
             return;
         }
 
+        Debug.Log($"Block dropped at cell: {cell.x}, {cell.y}");
+
         levelGrid.UnSetHightlight();
-        // Test, destroy the block
+
+        // Transfer block data to the grid
+        levelGrid.InsertBlock(cell.x, cell.y, current.Block);
+
+        // Destroy the block and spawn a new one
         Destroy(current.gameObject);
+
         SpawnNewBlock();
     }
 
@@ -103,7 +136,17 @@ public class Player : MonoBehaviour
         }
         GameObject newBlock = Instantiate(dropInBlockPrefab, currentSpawnPoint);
         DropInBlock dropInBlock = newBlock.GetComponent<DropInBlock>();
-        string[] randomCharCodes = { "rrrr", "ggrr", "pkpy", "ggbr" };
-        dropInBlock.Initialize(randomCharCodes[Random.Range(0, randomCharCodes.Length)]);
+        if (currentDropIndex < 0 || currentDropIndex >= dropSequence.Length)
+        {
+            // Temp: Reset index if we run out of blocks
+            // I think we should add random block generation with fixed seed later
+            currentDropIndex = 0;
+        }
+        if (currentDropIndex < dropSequence.Length)
+        {
+            string colorCharCodes = dropSequence[currentDropIndex];
+            dropInBlock.Initialize(colorCharCodes);
+            currentDropIndex++;
+        }
     }
 }

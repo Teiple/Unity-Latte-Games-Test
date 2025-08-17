@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Object = System.Object;
+using DataStructures.UnionFind;
 
 namespace Jelly
 {
@@ -34,6 +34,14 @@ namespace Jelly
     }
 
 
+    public enum Direction
+    {
+        Left = 0,
+        Right = 1,
+        Up = 2,
+        Down = 3,
+    }
+
     public class Grid
     {
         // Cells reference index of the block if it is a block, -1 for being empty and -2 for being obstacle.
@@ -42,6 +50,8 @@ namespace Jelly
         private List<Block> blocks;
         private int columns;
         private int rows;
+        private DisjointSet<Chunk> chunkSet;
+
 
         public int Columns { get { return columns; } }
         public int Rows { get { return rows; } }
@@ -63,6 +73,8 @@ namespace Jelly
             
             cells = new int[columns * rows];
             blocks = new List<Block>();
+            chunkSet = new DisjointSet<Chunk>();
+
             cellStrings = new string[columns * rows];
 
             for (int row = 0; row < rows; row++)
@@ -95,9 +107,10 @@ namespace Jelly
                         default:
                             {
                                 cells[index] = blocks.Count;
-                                blocks.Add(new Block(cellString));
+                                Block newBlock = new Block(cellString);
+                                blocks.Add(newBlock);
+                                AddNewSetsForBlock(newBlock);
                                 break;
-
                             }
                     }
                 }
@@ -135,6 +148,155 @@ namespace Jelly
                 return "####"; // Obstacle
             }
             return cellStrings[column + row * columns];
+        }
+
+        public bool TryInsertBlock(int row, int column, Block block)
+        {
+            if (column < 0 || column >= columns || row < 0 || row >= rows)
+            {
+                return false;
+            }
+            if (block == null || block.GetChunkCount() == 0)
+            {
+                return false;
+            }
+            int cellIndex = column + row * columns;
+            if (cells[cellIndex] != (int) CellMarker.Empty || cells[cellIndex] >= blocks.Count)
+            {
+                return false; // Cell is not empty or is an obstacle
+            }
+            cells[cellIndex] = blocks.Count;
+            blocks.Add(block);
+            AddNewSetsForBlock(block);
+            ResolveAt(row, column);
+
+            // Print debug information
+            Chunk[][] chunkSetArray = chunkSet.GetAllSets();
+            for (int i = 0; i < chunkSetArray.Length; i++)
+            {
+                Debug.Log($"Chunk Set {i}:");
+                foreach (Chunk chunk in chunkSetArray[i])
+                {
+                    Debug.Log($"  Chunk Color: {chunk.ColorCode}");
+                }
+            }
+
+            return true;
+        }
+
+        
+        private void ResolveAt(int row, int column)
+        {
+            if (column < 0 || column >= columns || row < 0 || row >= rows)
+            {
+                return;
+            }
+            int cellIndex = column + row * columns;
+            if (cells[cellIndex] < 0 || cells[cellIndex] >= blocks.Count)
+            {
+                return; // Cell is empty or an obstacle
+            }
+            Block block = blocks[cells[cellIndex]];
+            
+            // Check neighbour blocks in four directions
+            Vector2Int[] directions = new Vector2Int[]
+            {
+                new (0, -1), // Left
+                new (0, 1),  // Right
+                new (-1, 0),  // Up
+                new (1, 0),  // Down
+            };
+
+            for (int i = 0; i < directions.Length; i++)
+            {
+                Vector2Int dir = directions[i];
+                int neighbourRow = row + dir.x;
+                int neighbourColumn = column + dir.y;
+                if (neighbourRow < 0 || neighbourRow >= rows || neighbourColumn < 0 || neighbourColumn >= columns)
+                {
+                    continue; // Out of bounds
+                }
+                int neighbourIndex = neighbourColumn + neighbourRow * columns;
+                if (cells[neighbourIndex] < 0 || cells[neighbourIndex] >= blocks.Count)
+                {
+                    continue; // Cell is empty or an obstacle
+                }
+                Block neighbourBlock = blocks[cells[neighbourIndex]];
+                
+                switch (i)
+                {
+                    case (int) Direction.Left:
+                        {
+                            foreach (Chunk chunk in block.GetLeft())
+                            {
+                                foreach (Chunk neighbourChunk in neighbourBlock.GetRight())
+                                {
+                                    if (chunk.ColorCode == neighbourChunk.ColorCode)
+                                    {
+                                        chunkSet.Union(chunk, neighbourChunk);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    case (int) Direction.Right:
+                        {
+                            foreach (Chunk chunk in block.GetRight())
+                            {
+                                foreach (Chunk neighbourChunk in neighbourBlock.GetLeft())
+                                {
+                                    if (chunk.ColorCode == neighbourChunk.ColorCode)
+                                    {
+                                        chunkSet.Union(chunk, neighbourChunk);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    case (int) Direction.Up:
+                        {
+                            foreach (Chunk chunk in block.GetTop())
+                            {
+                                foreach (Chunk neighbourChunk in neighbourBlock.GetBottom())
+                                {
+                                    if (chunk.ColorCode == neighbourChunk.ColorCode)
+                                    {
+                                        chunkSet.Union(chunk, neighbourChunk);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    case (int) Direction.Down:
+                        {
+                            Debug.Log($"Resolving Down at {row}, {column}");
+                            foreach (Chunk chunk in block.GetBottom())
+                            {
+                                    foreach (Chunk neighbourChunk in neighbourBlock.GetTop())
+                                    {
+                                        Debug.Log($"Comparing {chunk.ColorCode} with {neighbourChunk.ColorCode}");
+                                        if (chunk.ColorCode == neighbourChunk.ColorCode)
+                                        {
+                                            chunkSet.Union(chunk, neighbourChunk);
+                                        }
+                                    }
+                            }
+                            break;
+                        }
+                }
+            }
+        }
+
+        private void AddNewSetsForBlock(Block block)
+        {
+            if (chunkSet == null || block == null || block.GetChunkCount() == 0)
+            {
+                return;
+            }
+            foreach (Chunk chunk in block.GetChunks())
+            {
+                chunkSet.MakeSet(chunk);
+            }
         }
     }
     
@@ -204,7 +366,7 @@ namespace Jelly
                     new int[] { 0, 1 },
                     new int[] { 0, 1 },
                     new int[] { 0 },
-                    new int[] { 0 }
+                    new int[] { 1 }
                 };
                 SetAllByIndices(getDir);
 
@@ -353,6 +515,11 @@ namespace Jelly
             return bottom;
         }
 
+        public List<Chunk> GetChunks()
+        {
+            return chunks;
+        }
+
         public ColorCode[] GetChunkColorCodes()
         {
             ColorCode[] colorCodes = new ColorCode[chunks.Count];
@@ -372,19 +539,6 @@ namespace Jelly
             return chunks.Count;
         }
 
-        public string GetColorCharCodes()
-        {
-            if (chunks == null || chunks.Count == 0)
-            {
-                return "????";
-            }
-            string colorCodes = "";
-            foreach (Chunk chunk in chunks)
-            {
-                colorCodes += (char) chunk.ColorCode;
-            }
-            return colorCodes;
-        }
 
         private void SetAllByIndices(int[][] getDir)
         {
@@ -424,7 +578,7 @@ namespace Jelly
     }
 
     // A colored chunk of a jelly block
-    public class Chunk : UnityEngine.Object
+    public class Chunk : IComparable<Chunk>
     {
         public ColorCode ColorCode { get { return colorCode; } }
 
@@ -444,6 +598,21 @@ namespace Jelly
                 parentBlock.RemoveChunk(this);
                 parentBlock = null;
             }
+        }
+
+        // This is 99.9% unnecessary, due to Union-Find implementation didn't actually make use
+        // of any comparision other than equal. But I'm not risking editing that code
+        public int CompareTo(Chunk other)
+        {
+            if (other == null)
+            {
+                return 1;
+            }
+            if (this == other)
+            {
+                return 0;
+            }
+            return -1;
         }
     }
 }

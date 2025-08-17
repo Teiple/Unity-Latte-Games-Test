@@ -6,11 +6,16 @@ using UnityEngine.Rendering;
 
 public class DropInBlock : MonoBehaviour
 {
-    [SerializeField] private string colorCharCodes;
     [SerializeField] private float moveSpeed = 20.0f;
-
+    private Jelly.Block block;
     private bool isControlled = false;
     private Vector3 targetPosition;
+
+
+    public Jelly.Block Block
+    {
+        get { return block; }
+    }
 
 
     void Update()
@@ -49,9 +54,8 @@ public class DropInBlock : MonoBehaviour
         {
             return;
         }
-
-        this.colorCharCodes = colorCharCodes;
-        Block block = new Block(colorCharCodes);
+        
+        block = new Block(colorCharCodes);
         Jelly.BlockVariant blockVariant = block.Variant;
         GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
         GameObject levelBlockGameObj = Instantiate(prefab, transform);

@@ -8,7 +8,6 @@ public class LevelBlock : MonoBehaviour
 {
     private Jelly.Block block;
     [SerializeField] private bool isInitialized = false;
-    [SerializeField] private string colorCharCodes = "";
 
     public void Initialize(Jelly.Block block)
     {
@@ -18,7 +17,6 @@ public class LevelBlock : MonoBehaviour
         }
 
         this.block = block;
-        colorCharCodes = block.GetColorCharCodes();
 
         int chunkCount = block.GetChunkCount();
         MeshRenderer[] chunkMeshes = GetComponentsInChildren<MeshRenderer>();
