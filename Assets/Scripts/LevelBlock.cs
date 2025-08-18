@@ -7,12 +7,12 @@ using static Jelly.Block;
 
 public class LevelBlock : MonoBehaviour
 {
-    private Jelly.Block block;
     [SerializeField] private bool isInitialized = false;
-    // A lazy way to get meshes for DropInBlock
-    private bool isNonFunctional = false;
+    private Jelly.Block block;
+    
+    public Jelly.Block Block { get { return block; } }
 
-    public void Initialize(Jelly.Block block, bool isNonFunctional = false)
+    public void Initialize(Jelly.Block block)
     {
         if (isInitialized || block == null)
         {
@@ -20,8 +20,7 @@ public class LevelBlock : MonoBehaviour
         }
 
         this.block = block;
-        this.isNonFunctional = isNonFunctional;
-
+        
         int chunkCount = block.GetChunkCount();
         MeshRenderer[] chunkMeshes = GetComponentsInChildren<MeshRenderer>();
         if (chunkMeshes.Length != chunkCount)
@@ -35,13 +34,10 @@ public class LevelBlock : MonoBehaviour
             chunkMeshes[i].material = GameSingleton.instance.GetMaterialForColorCode(colorCodes[i]);
         }
 
-        if (!isNonFunctional)
-        {
-            // Register the block removal event
-            block.PreparedRemoval += OnBlockPreparedRemoval;
-            // Register the block variant changed event
-            block.VariantChanged += OnBlockVariantChanged;
-        }
+        // Register the block removal event
+        block.PreparedRemoval += OnBlockPreparedRemoval;
+        // Register the block variant changed event
+        block.VariantChanged += OnBlockVariantChanged;
 
         isInitialized = true;
     }

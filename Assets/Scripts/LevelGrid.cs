@@ -50,16 +50,6 @@ public class LevelGrid : MonoBehaviour
                 {
                     Jelly.Block block = grid.GetBlock(row, col);
                     CreateLevelBlock(gridTileGameObj.transform, block);
-
-                    if (row == 2 && col == 1)
-                    {
-                        Chunk[] leftChunks = block.GetLeft();
-                        string leftColorCodes = string.Join("", Array.ConvertAll(leftChunks, chunk => chunk.ColorCode.ToString()));
-                        Debug.Log($"Left Chunks Color Codes: {leftColorCodes}");
-                        Chunk[] rightChunks = block.GetRight();
-                        string rightColorCodes = string.Join("", Array.ConvertAll(rightChunks, chunk => chunk.ColorCode.ToString()));
-                        Debug.Log($"Right Chunks Color Codes: {rightColorCodes}");
-                    }
                 }
             }
         }
@@ -148,9 +138,21 @@ public class LevelGrid : MonoBehaviour
         Resolve();
     }
 
+    public void InsertBlock(int row, int column, LevelBlock levelBlock)
+    {
+        if (grid.TryInsertBlock(row, column, levelBlock.Block))
+        {
+            Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
+            levelBlock.transform.parent = gridTile;
+            levelBlock.transform.localPosition = Vector3.zero;
+        }
+        Resolve();
+    }
+
     public void Resolve()
     {
-        grid.Resolve();
+        Jelly.GridResolveData resolveData = grid.Resolve();
+        GameSingleton.instance.AddProgress(resolveData.RemovedChunks);
     }
 
 

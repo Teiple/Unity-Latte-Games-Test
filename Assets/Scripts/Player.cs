@@ -102,10 +102,10 @@ public class Player : MonoBehaviour
 
         levelGrid.UnSetHightlight();
 
-        // Transfer block data to the grid
-        levelGrid.InsertBlock(cell.x, cell.y, current.Block);
-
-        // Destroy the block and spawn a new one
+        // Transfer block data & level block
+        // (visualized game object of the block)
+        // to the grid
+        levelGrid.InsertBlock(cell.x, cell.y, current.RepresentLevelBlock);
         Destroy(current.gameObject);
 
         SpawnNewBlock();

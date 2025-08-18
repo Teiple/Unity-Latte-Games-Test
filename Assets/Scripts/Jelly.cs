@@ -43,6 +43,14 @@ namespace Jelly
         Down = 3,
     }
 
+
+    public struct GridResolveData
+    {
+        public Chunk[] RemovedChunks;
+        public Block[] ContainingBlocks;
+    }
+
+
     public class Grid
     {
         // Cells reference index of the block if it is a block, -1 for being empty and -2 for being obstacle.
@@ -173,30 +181,15 @@ namespace Jelly
             return true;
         }
 
-        public void Resolve()
+        public GridResolveData Resolve()
         {
-            Debug.Log("Initial state of grid:");
-            for (int row = 0; row < rows; row++)
-            {
-                string rowString = "";
-                for (int column = 0; column < columns; column++)
-                {
-                    int cellIndex = column + row * columns;
-                    rowString += $"{cells[cellIndex]} ";
-                }
-                Debug.Log(rowString);
-            }
-
             UnionAllChunks();
             
-            Block[] involvedBlocks = RemoveNonDistinctChunks();
+            GridResolveData resolveData = RemoveNonDistinctChunks();
             Block[] blockArr = blocks.ToArray();
 
             // Remove blocks that have no chunks left
-            List<Block> blocksToRemove = new List<Block>();
-            List<int> shiftingHistory = new List<int>();
-
-            foreach (Block block in involvedBlocks)
+            foreach (Block block in resolveData.ContainingBlocks)
             {
                 int blockIndex = blocks.IndexOf(block);
                 
@@ -216,13 +209,10 @@ namespace Jelly
                         }
                     }
                     blockArr[blockIndex] = null;
-                    blocksToRemove.Add(block);
                 }
             }
 
-            Debug.Log($"Initial blocks count: {blocks.Count}");
-            Debug.Log($"Blocks to remove: {blocksToRemove.Count}");
-
+            // Change all the cells back to the right blockIndex
             blocks = new List<Block>();
             for (int i = 0; i < blockArr.Length; i++)
             {
@@ -239,19 +229,7 @@ namespace Jelly
                 }
             }
 
-            // Print the final state of the grid
-            Debug.Log("Final state of the grid:");
-            for (int row = 0; row < rows; row++)
-            {
-                string rowString = "";
-                for (int column = 0; column < columns; column++)
-                {
-                    int cellIndex = column + row * columns;
-                    rowString += $"{cells[cellIndex]} ";
-                }
-                Debug.Log(rowString);
-            }
-            Debug.Log($"Blocks count: {blocks.Count}");
+            return resolveData;
         }
 
 
@@ -297,8 +275,6 @@ namespace Jelly
                 {
                     case (int) Direction.Left:
                         {
-                            Debug.Log($"Unioning chunks at ({row}, {column}) with neighbour at ({neighbourRow}, {neighbourColumn}) in Left direction");
-                            bool unioned = false;
                             foreach (Chunk chunk in block.GetLeft())
                             {
                                 foreach (Chunk neighbourChunk in neighbourBlock.GetRight())
@@ -306,21 +282,9 @@ namespace Jelly
                                     if (chunk.ColorCode == neighbourChunk.ColorCode)
                                     {
                                         chunkSet.Union(chunk, neighbourChunk);
-                                        unioned = true;
                                     }
                                 }
                             }
-                            if (!unioned)
-                            {
-                                Debug.Log($"No matching chunks found for union at ({row}, {column}) with neighbour at ({neighbourRow}, {neighbourColumn}) in Left direction");
-                                Chunk[] myLeft = block.GetLeft();
-                                Chunk[] neighbourRight = neighbourBlock.GetRight();
-                                string myLeftString = string.Join(", ", Array.ConvertAll(myLeft, c => c.ColorCode.ToString()));
-                                Debug.Log($"My Left Chunks: {myLeftString}");
-                                string neighbourRightString = string.Join(", ", Array.ConvertAll(neighbourRight, c => c.ColorCode.ToString()));
-                                Debug.Log($"Neighbour Right Chunks: {neighbourRightString}");
-                            }
-
                             break;
                         }
                     case (int) Direction.Right:
@@ -387,19 +351,16 @@ namespace Jelly
                 {
                     continue;
                 }
-                string setString = "1. Set: ";
-                foreach (Chunk chunk in chunkSet)
-                {
-                    setString += $"{chunk.ColorCode} ";
-                }
-                Debug.Log(setString);
             }
         }
 
-        private Block[] RemoveNonDistinctChunks()
+        private GridResolveData RemoveNonDistinctChunks()
         {
-            HashSet<Block> involvedBlocks = new HashSet<Block>();
+            HashSet<Block> involvedBlocks = new();
             Chunk[] removedChunks = chunkSet.GetAndRemoveNonDistinctElements();
+
+            GridResolveData resolveData = new(){ RemovedChunks = removedChunks };
+
             foreach (Chunk removedChunk in removedChunks)
             {
                 involvedBlocks.Add(removedChunk.ParentBlock);
@@ -407,29 +368,15 @@ namespace Jelly
             }
             if (involvedBlocks.Count == 0)
             {
-                return new Block[0];
+                resolveData.ContainingBlocks = new Block[0];
+                return resolveData;
             }
 
-            Block[] blocksToReturn = new Block[involvedBlocks.Count];
-            involvedBlocks.CopyTo(blocksToReturn);
+            Block[] containingBlocks = new Block[involvedBlocks.Count];
+            involvedBlocks.CopyTo(containingBlocks);
+            resolveData.ContainingBlocks = containingBlocks;
 
-            // Print sets
-            Chunk[][] chunkSetArr = chunkSet.GetAllSets();
-            foreach (Chunk[] chunkSet in chunkSetArr)
-            {
-                if (chunkSet.Length == 0)
-                {
-                    continue;
-                }
-                string setString = "2. Set: ";
-                foreach (Chunk chunk in chunkSet)
-                {
-                    setString += $"{chunk.ColorCode} ";
-                }
-                Debug.Log(setString);
-            }
-
-            return blocksToReturn;
+            return resolveData;
         }
 
         private void AddNewSetsForBlock(Block block)
