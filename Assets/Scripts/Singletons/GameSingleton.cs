@@ -182,8 +182,7 @@ public class GameSingleton : MonoBehaviour
     private void LoadLevel(int increment)
     {
         int levelNumber = GetCurrentLevelNumber() + increment;
-        Debug.Log($"Loading level {levelNumber}");
-        if (levelNumber > 0 && levelNumber < MAX_LEVELS)
+        if (levelNumber > 0 && levelNumber <= MAX_LEVELS)
         {
             string nextLevel = $"Level{(levelNumber).ToString("D2")}";
             if (SceneExists(nextLevel))

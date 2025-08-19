@@ -49,7 +49,6 @@ public class Hud : MonoBehaviour
 
     public void OnNextLevelPressed()
     {
-        Debug.Log("Next Level Pressed");
         GameSingleton.instance.LoadNextLevel();
     }
 
@@ -60,8 +59,6 @@ public class Hud : MonoBehaviour
 
     public void OnRestartPressed()
     {
-        Debug.Log("Restart Pressed");
-        Debug.Break();
         GameSingleton.instance.ReloadLevel();
     }
 

@@ -138,6 +138,7 @@ public class LevelGrid : MonoBehaviour
             Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
             CreateLevelBlock(gridTile, block);
         }
+
         Resolve();
     }
 
@@ -159,10 +160,22 @@ public class LevelGrid : MonoBehaviour
 
     private void Resolve()
     {
-        Jelly.GridResolveData resolveData = grid.Resolve();
-        isGridFull = grid.IsGridFull();
+        int combo = 0;
+        bool isFullyResolved = false;
 
-        GameSingleton.instance.AddProgress(resolveData.RemovedChunks);
+        while (!isGridFull && !isFullyResolved) {
+            Jelly.GridResolveData resolveData = grid.Resolve();
+            isFullyResolved = resolveData.RemovedChunks.Length == 0;
+            if (isFullyResolved)
+            {
+                break;
+            }
+            combo++;
+            isGridFull = grid.IsGridFull();
+            GameSingleton.instance.AddProgress(resolveData.RemovedChunks);
+        }
+
+        Debug.Log($"Grid resolved with combo: {combo}, isGridFull: {isGridFull}");
     }
 
     private void CreateLevelBlock(Transform gridTile, Jelly.Block block)

@@ -282,65 +282,60 @@ namespace Jelly
                     continue; // Cell is empty or an obstacle
                 }
                 Block neighbourBlock = blocks[cells[neighbourIndex]];
-                
+
+                Chunk[] thisChunks = new Chunk[0];
+                Chunk[] neighbourChunks = new Chunk[0];
                 switch (i)
                 {
                     case (int) Direction.Left:
                         {
-                            foreach (Chunk chunk in block.GetLeft())
-                            {
-                                foreach (Chunk neighbourChunk in neighbourBlock.GetRight())
-                                {
-                                    if (chunk.ColorCode == neighbourChunk.ColorCode)
-                                    {
-                                        chunkSet.Union(chunk, neighbourChunk);
-                                    }
-                                }
-                            }
+                            thisChunks = block.GetLeft();
+                            neighbourChunks = neighbourBlock.GetRight();
                             break;
                         }
                     case (int) Direction.Right:
                         {
-                            foreach (Chunk chunk in block.GetRight())
-                            {
-                                foreach (Chunk neighbourChunk in neighbourBlock.GetLeft())
-                                {
-                                    if (chunk.ColorCode == neighbourChunk.ColorCode)
-                                    {
-                                        chunkSet.Union(chunk, neighbourChunk);
-                                    }
-                                }
-                            }
+                            thisChunks = block.GetRight();
+                            neighbourChunks = neighbourBlock.GetLeft();
                             break;
                         }
                     case (int) Direction.Up:
                         {
-                            foreach (Chunk chunk in block.GetTop())
-                            {
-                                foreach (Chunk neighbourChunk in neighbourBlock.GetBottom())
-                                {
-                                    if (chunk.ColorCode == neighbourChunk.ColorCode)
-                                    {
-                                        chunkSet.Union(chunk, neighbourChunk);
-                                    }
-                                }
-                            }
+                            thisChunks = block.GetTop();
+                            neighbourChunks = neighbourBlock.GetBottom();
                             break;
                         }
                     case (int) Direction.Down:
                         {
-                            foreach (Chunk chunk in block.GetBottom())
-                            {
-                                    foreach (Chunk neighbourChunk in neighbourBlock.GetTop())
-                                    {
-                                        if (chunk.ColorCode == neighbourChunk.ColorCode)
-                                        {
-                                            chunkSet.Union(chunk, neighbourChunk);
-                                        }
-                                    }
-                            }
+                            thisChunks = block.GetBottom();
+                            neighbourChunks = neighbourBlock.GetTop();
                             break;
                         }
+                }
+
+                if (thisChunks.Length > 1 && thisChunks.Length == neighbourChunks.Length)
+                {
+                    // Order is necessary in this case
+                    for (int j = 0; j < thisChunks.Length; j++)
+                    {
+                        if (thisChunks[j].ColorCode == neighbourChunks[j].ColorCode)
+                        {
+                            chunkSet.Union(thisChunks[j], neighbourChunks[j]);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (Chunk chunk in thisChunks)
+                    {
+                        foreach (Chunk neighbourChunk in neighbourChunks)
+                        {
+                            if (chunk.ColorCode == neighbourChunk.ColorCode)
+                            {
+                                chunkSet.Union(chunk, neighbourChunk);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -539,7 +534,7 @@ namespace Jelly
             }
             chunks.RemoveAt(removedChunkIndex);
             // Set new variant based on the remaining chunks
-            variant = Expand(variant, removedChunkIndex);
+            variant = Expand(variant, removedChunkIndex, chunks);
             
             VariantChanged?.Invoke(this, variant);
         }
@@ -683,7 +678,7 @@ namespace Jelly
                 // 01
                 // 21
                 case BlockVariant.TripleRight:
-                    return new Chunk[] { chunks[0], chunks[2] };
+                    return new Chunk[] { chunks[2], chunks[1] };
                 // 01
                 // 22
                 case BlockVariant.TripleBottom:
@@ -722,8 +717,8 @@ namespace Jelly
             PreparedRemoval?.Invoke(this);
         }
 
-        // Expand the remain chunks of the block when exactly ONE chunk is removed
-        private BlockVariant Expand(BlockVariant variantBefore, int removedChunkIndex)
+        // Expand the remain chunks of the block AFTER exactly ONE chunk is removed
+        private BlockVariant Expand(BlockVariant variantBefore, int removedChunkIndex, List<Chunk> chunkListToModify)
         {
             switch (variantBefore)
             {
@@ -789,6 +784,8 @@ namespace Jelly
                             // Turns into:
                             // 21
                             // 21
+                            // This seems like the only case where the chunk order gets messed up
+                            chunkListToModify.Reverse();
                             return BlockVariant.DoubleVertical;
                         } else if (removedChunkIndex == 1)
                         {
