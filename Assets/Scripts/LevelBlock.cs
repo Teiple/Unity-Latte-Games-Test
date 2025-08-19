@@ -62,8 +62,6 @@ public class LevelBlock : MonoBehaviour
             return;
         }
 
-        block = blockCalled;
-        
         Morph(block.Variant, newChunkOrder);
     }
 

@@ -140,9 +140,8 @@ public class LevelGrid : MonoBehaviour
         {
             Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
             CreateLevelBlock(gridTile, block);
+            StartCoroutine(ResolveCoroutine());
         }
-
-        StartCoroutine(ResolveCoroutine());
     }
 
     public void InsertBlock(int row, int column, LevelBlock levelBlock)
@@ -158,9 +157,9 @@ public class LevelGrid : MonoBehaviour
             levelBlock.transform.parent = gridTile;
             levelBlock.transform.localPosition = Vector3.zero;
             levelBlock.transform.localScale = Vector3.one;
+            StartCoroutine(ResolveCoroutine());
         }
 
-        StartCoroutine(ResolveCoroutine());
     }
 
     private IEnumerator ResolveCoroutine()

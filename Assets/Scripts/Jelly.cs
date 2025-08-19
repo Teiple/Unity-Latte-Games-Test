@@ -287,25 +287,25 @@ namespace Jelly
                 Chunk[] neighbourChunks = new Chunk[0];
                 switch (i)
                 {
-                    case (int) Direction.Left:
+                    case (int)Direction.Left:
                         {
                             thisChunks = block.GetLeft();
                             neighbourChunks = neighbourBlock.GetRight();
                             break;
                         }
-                    case (int) Direction.Right:
+                    case (int)Direction.Right:
                         {
                             thisChunks = block.GetRight();
                             neighbourChunks = neighbourBlock.GetLeft();
                             break;
                         }
-                    case (int) Direction.Up:
+                    case (int)Direction.Up:
                         {
                             thisChunks = block.GetTop();
                             neighbourChunks = neighbourBlock.GetBottom();
                             break;
                         }
-                    case (int) Direction.Down:
+                    case (int)Direction.Down:
                         {
                             thisChunks = block.GetBottom();
                             neighbourChunks = neighbourBlock.GetTop();
@@ -313,6 +313,18 @@ namespace Jelly
                         }
                 }
 
+                string thChunk = "";
+                string neigChunk = "";
+
+                foreach (var chunk in thisChunks)
+                {
+                    thChunk += chunk.ColorCode + " ";
+                }
+                foreach (var chunk in neighbourChunks)
+                {
+                    neigChunk += chunk.ColorCode + " ";
+                }
+                
                 if (thisChunks.Length > 1 && thisChunks.Length == neighbourChunks.Length)
                 {
                     // Order is necessary in this case
@@ -355,6 +367,8 @@ namespace Jelly
                     UnionChunksAt(row, column);
                 }
             }
+
+           
         }   
 
         private GridResolveData RemoveNonDistinctChunks()
@@ -836,7 +850,7 @@ namespace Jelly
                             // Turns into:
                             // 00
                             // 22
-                            reorderedChunkIndices = new List<int> { 1, 2 };
+                            reorderedChunkIndices = new List<int> { 0, 2 };
                             return BlockVariant.DoubleHorizontal;
                         }
                         else
