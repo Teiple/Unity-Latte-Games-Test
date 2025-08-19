@@ -260,6 +260,8 @@ public class GameSingleton : MonoBehaviour
         currentHud = FindObjectOfType<Hud>();
         currentProgress = new();
         gameOver = false;
+
+        currentHud.UpdateTotalCoins(totalCoins);
     }
 
     private void UpdateProperties(GameSingleton other)
