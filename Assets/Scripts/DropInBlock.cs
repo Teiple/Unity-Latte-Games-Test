@@ -9,9 +9,9 @@ public class DropInBlock : MonoBehaviour
     [SerializeField] private float moveSpeed = 20.0f;
     private bool isControlled = false;
     private Vector3 targetPosition;
-    private LevelBlock levelBlock;
+    private LevelBlock representLevelBlock;
 
-    public LevelBlock RepresentLevelBlock { get { return levelBlock; } }
+    public LevelBlock RepresentLevelBlock { get { return representLevelBlock; } }
 
     private void Update()
     {
@@ -52,11 +52,10 @@ public class DropInBlock : MonoBehaviour
         
         Block block = new Block(colorCharCodes);
         Jelly.BlockVariant blockVariant = block.Variant;
-        GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
-        GameObject levelBlockGameObj = Instantiate(prefab, transform);
-        levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
-        // Make isNonFunctional true to prevent the block events from being registered
+        LevelBlock prefab = GameSingleton.instance.GetLevelBlockBasePrefab(blockVariant);
+        LevelBlock levelBlock = Instantiate(prefab, transform);
         levelBlock.Initialize(block);
+        representLevelBlock = levelBlock;
     }
 
     public void SetControlledTargetPosition(Vector3 position)

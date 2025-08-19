@@ -105,12 +105,12 @@ namespace Jelly
                     {
                         case "####":
                             {
-                                cells[index] = (int)CellMarker.Obstacle;
+                                cells[index] = (int) CellMarker.Obstacle;
                                 break;
                             }
                         case "----":
                             { 
-                                cells[index] = (int)CellMarker.Empty;
+                                cells[index] = (int) CellMarker.Empty;
                                 break;
                             }
                         default:
@@ -320,6 +320,9 @@ namespace Jelly
                     {
                         if (thisChunks[j].ColorCode == neighbourChunks[j].ColorCode)
                         {
+                            // Hot fix:
+                            chunkSet.MakeSet(thisChunks[j]);
+                            chunkSet.MakeSet(neighbourChunks[j]);
                             chunkSet.Union(thisChunks[j], neighbourChunks[j]);
                         }
                     }
@@ -332,6 +335,9 @@ namespace Jelly
                         {
                             if (chunk.ColorCode == neighbourChunk.ColorCode)
                             {
+                                // Hot fix:
+                                chunkSet.MakeSet(chunk);
+                                chunkSet.MakeSet(neighbourChunk);
                                 chunkSet.Union(chunk, neighbourChunk);
                             }
                         }
@@ -349,17 +355,7 @@ namespace Jelly
                     UnionChunksAt(row, column);
                 }
             }
-
-            // Print sets
-            Chunk[][] chunkSetArr = chunkSet.GetAllSets();
-            foreach (Chunk[] chunkSet in chunkSetArr)
-            {
-                if (chunkSet.Length == 0)
-                {
-                    continue;
-                }
-            }
-        }
+        }   
 
         private GridResolveData RemoveNonDistinctChunks()
         {
@@ -403,7 +399,7 @@ namespace Jelly
     // A block of jelly, consisting of multiple colored chunks.
     public class Block
     {
-        public delegate void BlockVariantChanged(Block block, BlockVariant newVariant);
+        public delegate void BlockVariantChanged(Block block, List<int> newChunkOrder);
         public delegate void BlockPreparedRemoval(Block block);
         public event BlockVariantChanged VariantChanged;
         public event BlockPreparedRemoval PreparedRemoval;
@@ -529,14 +525,23 @@ namespace Jelly
             int removedChunkIndex = chunks.IndexOf(chunk);
             if (removedChunkIndex < 0 || removedChunkIndex >= chunks.Count)
             {
-                // Chunk not found
                 return;
             }
-            chunks.RemoveAt(removedChunkIndex);
+
+            List<int> newChunkOrder;
+
             // Set new variant based on the remaining chunks
-            variant = Expand(variant, removedChunkIndex, chunks);
-            
-            VariantChanged?.Invoke(this, variant);
+            variant = Expand(variant, removedChunkIndex, out newChunkOrder);
+
+            // Reorder the chunk list
+            List<Chunk> newChunkList = new();
+            foreach (var idx in newChunkOrder)
+            {
+                newChunkList.Add(chunks[idx]);
+            }
+            chunks = newChunkList;
+
+            VariantChanged?.Invoke(this, newChunkOrder);
         }
 
         public Chunk[] GetLeft()
@@ -718,7 +723,7 @@ namespace Jelly
         }
 
         // Expand the remain chunks of the block AFTER exactly ONE chunk is removed
-        private BlockVariant Expand(BlockVariant variantBefore, int removedChunkIndex, List<Chunk> chunkListToModify)
+        private BlockVariant Expand(BlockVariant variantBefore, int removedChunkIndex, out List<int> reorderedChunkIndices)
         {
             switch (variantBefore)
             {
@@ -727,6 +732,10 @@ namespace Jelly
                 case BlockVariant.DoubleHorizontal:
                 case BlockVariant.DoubleVertical:
                     {
+                        reorderedChunkIndices = new List<int>
+                        {
+                            removedChunkIndex == 0 ? 1 : 0,
+                        };
                         return BlockVariant.Single;
                     }
                 case BlockVariant.TripleLeft:
@@ -741,12 +750,14 @@ namespace Jelly
                             // Turns into:
                             // 11
                             // 22
+                            reorderedChunkIndices = new List<int> { 1, 2 };
                             return BlockVariant.DoubleHorizontal;
                         } else
                         {
                             // Turns into:
                             // 02 or 01
                             // 02    01
+                            reorderedChunkIndices = new List<int> { 0, removedChunkIndex == 1 ? 2 : 1 };
                             return BlockVariant.DoubleVertical;
                         }
 
@@ -763,12 +774,14 @@ namespace Jelly
                             // Turns into:
                             // 12
                             // 12
+                            reorderedChunkIndices = new List<int> { 1, 2 };
                             return BlockVariant.DoubleVertical;
                         } else
                         {
                             // Turns into:
                             // 00 or 00
                             // 22    11
+                            reorderedChunkIndices = new List<int> { 0, removedChunkIndex == 1 ? 2 : 1 };
                             return BlockVariant.DoubleHorizontal;
                         }
                     }
@@ -785,19 +798,21 @@ namespace Jelly
                             // 21
                             // 21
                             // This seems like the only case where the chunk order gets messed up
-                            chunkListToModify.Reverse();
+                            reorderedChunkIndices = new List<int> { 2, 1 };
                             return BlockVariant.DoubleVertical;
                         } else if (removedChunkIndex == 1)
                         {
                             // Turns into:
                             // 00
                             // 22
+                            reorderedChunkIndices = new List<int> { 0, 2 };
                             return BlockVariant.DoubleHorizontal;
                         } else
                         {
                             // Turns into:
                             // 01
                             // 01
+                            reorderedChunkIndices = new List<int> { 0, 1 };
                             return BlockVariant.DoubleVertical;
                         }
                     }
@@ -813,6 +828,7 @@ namespace Jelly
                             // Turns into:
                             // 11
                             // 22
+                            reorderedChunkIndices = new List<int> { 1, 2 };
                             return BlockVariant.DoubleHorizontal;
                         }
                         else if (removedChunkIndex == 1)
@@ -820,6 +836,7 @@ namespace Jelly
                             // Turns into:
                             // 00
                             // 22
+                            reorderedChunkIndices = new List<int> { 1, 2 };
                             return BlockVariant.DoubleHorizontal;
                         }
                         else
@@ -827,10 +844,12 @@ namespace Jelly
                             // Turns into:
                             // 01
                             // 01
+                            reorderedChunkIndices = new List<int> { 0, 1 };
                             return BlockVariant.DoubleVertical;
                         }
                     }
                 default:
+                    reorderedChunkIndices = new();
                     return BlockVariant.None;
             }
         }

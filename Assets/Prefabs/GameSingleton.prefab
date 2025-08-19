@@ -78,5 +78,6 @@ MonoBehaviour:
     prefab: {fileID: 7350583419438268412, guid: ebae775821762724297a64149ab155af, type: 3}
   - variant: 7
     prefab: {fileID: 7751257926710169064, guid: e6b52e08d6009c243a3a2cd10e2b6403, type: 3}
+  levelBlockBasePrefab: {fileID: 1093766166555108382, guid: 437c7daa5b1e65e429cd8067a5e9d795, type: 3}
   defaultChunkMaterial: {fileID: 2100000, guid: 15ac993b6d4716f469d02c2f86d84867, type: 2}
   levelRequirements: []

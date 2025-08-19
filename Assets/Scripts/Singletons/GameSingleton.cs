@@ -46,6 +46,7 @@ public class GameSingleton : MonoBehaviour
 
     [SerializeField] private JellyColor[] jellyColorMaterials;
     [SerializeField] private LevelBlockVariantPrefab[] blockVariantPrefabs;
+    [SerializeField] private LevelBlock levelBlockBasePrefab;
     [SerializeField] private Material defaultChunkMaterial;
     [SerializeField] private LevelRequirement[] levelRequirements;
     
@@ -54,6 +55,8 @@ public class GameSingleton : MonoBehaviour
     private Dictionary<Jelly.ColorCode, int> currentProgress;
     private string currentLevel;
     private bool gameOver;
+    private int totalCoins;
+
 
     public LevelGrid CurrentLevelGrid { get { return currentLevelGrid; } }
     public Dictionary<Jelly.ColorCode, int> CurrentProgress { get { return currentProgress; } }
@@ -78,6 +81,7 @@ public class GameSingleton : MonoBehaviour
     private void Start()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        totalCoins = 0;
         Initialize();
     }
 
@@ -113,16 +117,16 @@ public class GameSingleton : MonoBehaviour
         return Color.white;
     }
 
-    public GameObject GetBlockVariantPrefab(Jelly.BlockVariant variant)
+    public LevelBlock GetLevelBlockBasePrefab(Jelly.BlockVariant variant)
     {
-        foreach (var blockVariantPrefab in blockVariantPrefabs)
-        {
-            if (blockVariantPrefab.variant == variant)
-            {
-                return blockVariantPrefab.prefab;
-            }
-        }
-        return null;
+        //foreach (var blockVariantPrefab in blockVariantPrefabs)
+        //{
+        //    if (blockVariantPrefab.variant == variant)
+        //    {
+        //        return blockVariantPrefab.prefab;
+        //    }
+        //}
+        return levelBlockBasePrefab;
     }
 
     public void AddProgress(Chunk[] removedChunks)
@@ -176,6 +180,17 @@ public class GameSingleton : MonoBehaviour
             return levelNumber;
         }
         return -1;
+    }
+
+    public void NotifyCombo(int combo)
+    {
+        if (combo >= 3)
+        {
+            int rewards = combo * 20;
+            currentHud.NotifyCombo(combo, rewards);
+            totalCoins += rewards;
+            currentHud.UpdateTotalCoins(totalCoins);
+        }
     }
 
 
@@ -255,7 +270,11 @@ public class GameSingleton : MonoBehaviour
     private void SetGameOver(GameOverReason reason)
     {
         gameOver = true;
-
+        if (reason == GameOverReason.LevelComplete)
+        {
+            totalCoins += 50;
+        }
+        currentHud.UpdateTotalCoins(totalCoins);
         currentHud.ShowGameOverPanel(reason);
     }
 

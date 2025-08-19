@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using DigitalRuby.Tween;
 
 public class Hud : MonoBehaviour
 {
     [SerializeField] private LevelRequirementUI levelRequirementUIPrefab;
     [SerializeField] private GridLayoutGroup levelRequirementGrid;
     [SerializeField] private Text levelIndicator;
-    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private CanvasGroup gameOverPanel;
     [SerializeField] private LayoutElement outOfSpaceGameOverLayout;
     [SerializeField] private LayoutElement levelCompleteGameOverLayout;
+    [SerializeField] private ComboNotifUI comboNotifUI;
+    [SerializeField] private Text totalCoinsText;
 
 
     private void Start()
@@ -25,7 +28,7 @@ public class Hud : MonoBehaviour
         }
         levelIndicator.text = $"Level {GameSingleton.instance.GetCurrentLevelNumber().ToString()}";
         
-        gameOverPanel.SetActive(false);
+        gameOverPanel.gameObject.SetActive(false);
         
         outOfSpaceGameOverLayout.ignoreLayout = true;
         outOfSpaceGameOverLayout.gameObject.SetActive(false);
@@ -64,12 +67,13 @@ public class Hud : MonoBehaviour
 
     public void ShowGameOverPanel(GameSingleton.GameOverReason reason)
     {
-        if (gameOverPanel.activeInHierarchy)
+        if (gameOverPanel.gameObject.activeInHierarchy)
         {
             return;
         }
 
-        gameOverPanel.SetActive(true);
+        gameOverPanel.alpha = 0;
+        gameOverPanel.gameObject.SetActive(true);
 
         if (reason == GameSingleton.GameOverReason.OutOfSpace)
         {
@@ -80,6 +84,27 @@ public class Hud : MonoBehaviour
         {
             levelCompleteGameOverLayout.ignoreLayout = false;
             levelCompleteGameOverLayout.gameObject.SetActive(true);
-        } 
+        }
+
+        gameOverPanel.gameObject.Tween(
+            $"Fade{gameOverPanel.GetInstanceID()}",
+            gameOverPanel.alpha,
+            1.0f,
+            0.5f, // duration
+            TweenScaleFunctions.CubicEaseInOut,
+            (t) =>
+            {
+                gameOverPanel.alpha = t.CurrentValue;
+            });
+    }
+
+    public void NotifyCombo(int combo, int rewards)
+    {
+        comboNotifUI.SetCombo(combo, rewards);
+    }
+
+    public void UpdateTotalCoins(int number)
+    {
+        totalCoinsText.text = number.ToString();
     }
 }

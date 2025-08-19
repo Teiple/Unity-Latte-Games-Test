@@ -16,8 +16,11 @@ public class LevelGrid : MonoBehaviour
     private Jelly.Grid grid;
     private GameObject hightlighter;
     private bool isGridFull = false;
+    private bool isGridResolving = false;
 
     public bool IsGridFull { get { return isGridFull; } }
+
+    public bool IsGridResolving { get { return isGridResolving; } }
 
     void Start()
     {
@@ -139,7 +142,7 @@ public class LevelGrid : MonoBehaviour
             CreateLevelBlock(gridTile, block);
         }
 
-        Resolve();
+        StartCoroutine(ResolveCoroutine());
     }
 
     public void InsertBlock(int row, int column, LevelBlock levelBlock)
@@ -154,37 +157,43 @@ public class LevelGrid : MonoBehaviour
             Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
             levelBlock.transform.parent = gridTile;
             levelBlock.transform.localPosition = Vector3.zero;
+            levelBlock.transform.localScale = Vector3.one;
         }
-        Resolve();
+
+        StartCoroutine(ResolveCoroutine());
     }
 
-    private void Resolve()
+    private IEnumerator ResolveCoroutine()
     {
         int combo = 0;
         bool isFullyResolved = false;
+        isGridResolving = true;
 
-        while (!isGridFull && !isFullyResolved) {
+        while (!isGridFull && !isFullyResolved)
+        {
             Jelly.GridResolveData resolveData = grid.Resolve();
             isFullyResolved = resolveData.RemovedChunks.Length == 0;
             if (isFullyResolved)
-            {
                 break;
-            }
+
             combo++;
             isGridFull = grid.IsGridFull();
             GameSingleton.instance.AddProgress(resolveData.RemovedChunks);
+
+            yield return new WaitForSeconds(0.55f);
         }
 
-        Debug.Log($"Grid resolved with combo: {combo}, isGridFull: {isGridFull}");
+        isGridResolving = false;
+
+        if (combo > 0)
+            GameSingleton.instance.NotifyCombo(combo);
     }
 
     private void CreateLevelBlock(Transform gridTile, Jelly.Block block)
     {
         Jelly.BlockVariant blockVariant = block.Variant;
-        GameObject prefab = GameSingleton.instance.GetBlockVariantPrefab(blockVariant);
-        GameObject levelBlockGameObj = Instantiate(prefab, gridTile.transform);
-        //levelBlockGameObj.transform.localScale = Vector3.one * (tileSize - 0.1f);
-        LevelBlock levelBlock = levelBlockGameObj.GetComponent<LevelBlock>();
+        LevelBlock prefab = GameSingleton.instance.GetLevelBlockBasePrefab(blockVariant);
+        LevelBlock levelBlock = Instantiate(prefab, gridTile.transform);
         levelBlock.Initialize(block);
     }
 }

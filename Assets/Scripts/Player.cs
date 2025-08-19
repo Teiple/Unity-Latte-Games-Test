@@ -107,6 +107,11 @@ public class Player : MonoBehaviour
 
     private void OnBlockDropped(DropInBlock current)
     {
+        if (GameSingleton.instance.CurrentLevelGrid.IsGridResolving)
+        {
+            return;
+        }
+
         LevelGrid levelGrid = GameSingleton.instance.CurrentLevelGrid;
         Vector2Int cell = levelGrid.FindNearbyEmptyCell(current.transform.position);
        
