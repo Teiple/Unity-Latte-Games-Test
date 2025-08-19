@@ -165,18 +165,23 @@ public class LevelGrid : MonoBehaviour
     private IEnumerator ResolveCoroutine()
     {
         int combo = 0;
-        bool isFullyResolved = false;
+        bool cannotResolveFurther = false;
         isGridResolving = true;
 
-        while (!isGridFull && !isFullyResolved)
+        while (!isGridFull && !cannotResolveFurther)
         {
             Jelly.GridResolveData resolveData = grid.Resolve();
-            isFullyResolved = resolveData.RemovedChunks.Length == 0;
-            if (isFullyResolved)
+            cannotResolveFurther = resolveData.RemovedChunks.Length == 0;
+            isGridFull = grid.IsGridFull();
+
+            if (cannotResolveFurther)
+            {
+                // Hot fix: add before potiential break
+                GameSingleton.instance.AddProgress(new Chunk[0]);
                 break;
+            }
 
             combo++;
-            isGridFull = grid.IsGridFull();
             GameSingleton.instance.AddProgress(resolveData.RemovedChunks);
 
             yield return new WaitForSeconds(0.55f);
