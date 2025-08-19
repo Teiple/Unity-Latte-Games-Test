@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6665504423849822394}
   - component: {fileID: 8562638679119469125}
   - component: {fileID: 5850480093885488865}
+  - component: {fileID: 22582424693905190}
   m_Layer: 0
   m_Name: ChunkMesh2
   m_TagString: Untagged
@@ -83,6 +84,21 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &22582424693905190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 24730346559894359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da6da2faf874b4047902a6c43b3f7560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bounceSpeed: 40
+  fallForce: 20
+  stiffness: 2
 --- !u!1 &3103310642791885219
 GameObject:
   m_ObjectHideFlags: 0
@@ -94,6 +110,7 @@ GameObject:
   - component: {fileID: 9079911167142810551}
   - component: {fileID: 9183315771449548533}
   - component: {fileID: 2127952305475863221}
+  - component: {fileID: 8407547418447307884}
   m_Layer: 0
   m_Name: ChunkMesh1
   m_TagString: Untagged
@@ -166,6 +183,21 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8407547418447307884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3103310642791885219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da6da2faf874b4047902a6c43b3f7560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bounceSpeed: 40
+  fallForce: 20
+  stiffness: 2
 --- !u!1 &4048770205399007993
 GameObject:
   m_ObjectHideFlags: 0
@@ -225,6 +257,7 @@ GameObject:
   - component: {fileID: 522937055801997273}
   - component: {fileID: 8520648269212405194}
   - component: {fileID: 6338909380603328742}
+  - component: {fileID: 4766999516169368511}
   m_Layer: 0
   m_Name: ChunkMesh0
   m_TagString: Untagged
@@ -297,3 +330,18 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4766999516169368511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4179567597407816610}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da6da2faf874b4047902a6c43b3f7560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bounceSpeed: 40
+  fallForce: 20
+  stiffness: 2
