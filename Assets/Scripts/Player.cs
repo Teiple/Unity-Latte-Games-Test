@@ -9,9 +9,11 @@ public class Player : MonoBehaviour
 {
     [SerializeField] private float offsetAmount = 1.0f;
     [SerializeField] private Transform spawnPointLeft;
+    [SerializeField] private Transform spawnPointCenter;
     [SerializeField] private Transform spawnPointRight;
     [SerializeField] private GameObject dropInBlockPrefab;
     [SerializeField] private TextAsset dropSequenceFile;
+    [SerializeField] private int spawnPointsCount = 2;
 
     private DropInBlock currentSelection;
     private Transform currentSpawnPoint;
@@ -23,6 +25,7 @@ public class Player : MonoBehaviour
         char[] charDelimiters = new[] { '\n', '\r' };
         StringSplitOptions splitOptions = StringSplitOptions.RemoveEmptyEntries;
         string[] lines = dropSequenceFile.text.Split(charDelimiters, splitOptions);
+
 
         if (lines.Length == 0 || lines.Length % 2 != 0 || lines[0].Length != 2)
         {
@@ -41,14 +44,26 @@ public class Player : MonoBehaviour
 
     void Start()
     {
-        currentSpawnPoint = spawnPointLeft;
-        SpawnNewBlock();
-        currentSpawnPoint = spawnPointRight;
-        SpawnNewBlock();
+        if (spawnPointsCount == 2)
+        {
+            currentSpawnPoint = spawnPointLeft;
+            SpawnNewBlock();
+            currentSpawnPoint = spawnPointRight;
+            SpawnNewBlock();
+        } else
+        {
+            currentSpawnPoint = spawnPointCenter;
+            SpawnNewBlock();
+        }
     }
 
     void Update()
     {
+        if (GameSingleton.instance.GameOver)
+        {
+            return;
+        }
+
         if (InputSingleton.instance.IsActionPressed("TouchPress"))
         {
             if (currentSelection == null)

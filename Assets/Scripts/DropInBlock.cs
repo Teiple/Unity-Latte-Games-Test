@@ -13,7 +13,7 @@ public class DropInBlock : MonoBehaviour
 
     public LevelBlock RepresentLevelBlock { get { return levelBlock; } }
 
-    void Update()
+    private void Update()
     {
         if (isControlled)
         {

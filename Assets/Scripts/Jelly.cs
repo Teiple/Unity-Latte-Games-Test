@@ -232,6 +232,18 @@ namespace Jelly
             return resolveData;
         }
 
+        public bool IsGridFull()
+        {
+            for (int i = 0; i < cells.Length; i++)
+            {
+                if (cells[i] == (int)CellMarker.Empty)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
 
         private void UnionChunksAt(int row, int column)
         {

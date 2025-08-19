@@ -15,6 +15,9 @@ public class LevelGrid : MonoBehaviour
 
     private Jelly.Grid grid;
     private GameObject hightlighter;
+    private bool isGridFull = false;
+
+    public bool IsGridFull { get { return isGridFull; } }
 
     void Start()
     {
@@ -58,11 +61,6 @@ public class LevelGrid : MonoBehaviour
         // Create hightlighter then hide it
         hightlighter = Instantiate(gridTileHightlighterPrefab, transform);
         hightlighter.SetActive(false);
-    }
-
-    void Update()
-    {
-        
     }
 
 
@@ -130,6 +128,11 @@ public class LevelGrid : MonoBehaviour
 
     public void InsertBlock(int row, int column, Jelly.Block block)
     {
+        if (isGridFull)
+        {
+            return;
+        }
+
         if (grid.TryInsertBlock(row, column, block))
         {
             Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
@@ -140,6 +143,11 @@ public class LevelGrid : MonoBehaviour
 
     public void InsertBlock(int row, int column, LevelBlock levelBlock)
     {
+        if (isGridFull)
+        {
+            return;
+        }
+
         if (grid.TryInsertBlock(row, column, levelBlock.Block))
         {
             Transform gridTile = coordsToGridTileTransforms[new Vector2Int(row, column)];
@@ -149,12 +157,13 @@ public class LevelGrid : MonoBehaviour
         Resolve();
     }
 
-    public void Resolve()
+    private void Resolve()
     {
         Jelly.GridResolveData resolveData = grid.Resolve();
+        isGridFull = grid.IsGridFull();
+
         GameSingleton.instance.AddProgress(resolveData.RemovedChunks);
     }
-
 
     private void CreateLevelBlock(Transform gridTile, Jelly.Block block)
     {

@@ -1,11 +1,23 @@
 using Jelly;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 public class GameSingleton : MonoBehaviour
 {
+    const int MAX_LEVELS = 3;
+
+    public enum GameOverReason
+    {
+        OutOfSpace = 0,
+        LevelComplete = 1,
+    }
+
+
     [System.Serializable]
     struct LevelBlockVariantPrefab
     {
@@ -36,15 +48,17 @@ public class GameSingleton : MonoBehaviour
     [SerializeField] private LevelBlockVariantPrefab[] blockVariantPrefabs;
     [SerializeField] private Material defaultChunkMaterial;
     [SerializeField] private LevelRequirement[] levelRequirements;
-    [SerializeField] private Hud currentHud;
     
     private LevelGrid currentLevelGrid;
+    private Hud currentHud;
     private Dictionary<Jelly.ColorCode, int> currentProgress;
+    private string currentLevel;
+    private bool gameOver;
 
     public LevelGrid CurrentLevelGrid { get { return currentLevelGrid; } }
     public Dictionary<Jelly.ColorCode, int> CurrentProgress { get { return currentProgress; } }
     public LevelRequirement[] LevelRequirements { get { return levelRequirements; } }
-    
+    public bool GameOver {  get { return gameOver; } }
 
     private void Awake()
     {
@@ -55,18 +69,26 @@ public class GameSingleton : MonoBehaviour
         }
         else
         {
+            // Copy the level requirements for GameSingleton instance
+            instance.UpdateProperties(this);
             Destroy(gameObject);
         }
     }
 
     private void Start()
     {
-        currentLevelGrid = FindObjectOfType<LevelGrid>();
-        currentHud = FindAnyObjectByType<Hud>();
-        currentProgress = new();
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        Initialize();
     }
 
-    
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+    }
+
     public Material GetMaterialForColorCode(Jelly.ColorCode colorCode)
     {
         foreach (var jellyColor in jellyColorMaterials)
@@ -105,6 +127,11 @@ public class GameSingleton : MonoBehaviour
 
     public void AddProgress(Chunk[] removedChunks)
     {
+        if (gameOver)
+        {
+            return;
+        }
+
         for (int i = 0; i < removedChunks.Length; i++)
         {
             Jelly.ColorCode colorCode = removedChunks[i].ColorCode;
@@ -116,10 +143,66 @@ public class GameSingleton : MonoBehaviour
                 currentProgress[colorCode]++;
             }
         }
-        EvaluateProgress();
+
+        if (EvaluateProgress())
+        {
+            SetGameOver(GameOverReason.LevelComplete);
+        } else if (currentLevelGrid.IsGridFull)
+        {
+            SetGameOver(GameOverReason.OutOfSpace);
+        }
+    }
+    
+    public void LoadNextLevel()
+    {
+        LoadLevel(1);
     }
 
-    
+    public void LoadPreviousLevel()
+    {
+        LoadLevel(-1);
+    }
+
+
+    public void ReloadLevel()
+    {
+        LoadScene(currentLevel);
+    }
+
+    public int GetCurrentLevelNumber()
+    {
+        if (Int32.TryParse(currentLevel.Substring(currentLevel.Length - 2, 2), out int levelNumber))
+        {
+            return levelNumber;
+        }
+        return -1;
+    }
+
+
+    private void LoadLevel(int increment)
+    {
+        int levelNumber = GetCurrentLevelNumber() + increment;
+        Debug.Log($"Loading level {levelNumber}");
+        if (levelNumber > 0 && levelNumber < MAX_LEVELS)
+        {
+            string nextLevel = $"Level{(levelNumber).ToString("D2")}";
+            if (SceneExists(nextLevel))
+            {
+                LoadScene(nextLevel);
+            }
+        }
+    }
+
+    private void LoadScene(string sceneName)
+    {
+        SceneManager.LoadScene(sceneName);
+    }
+
+    private string GetCurrentSceneName()
+    {
+        return SceneManager.GetActiveScene().name;
+    }
+
     private bool EvaluateProgress()
     {
         bool goalReached = true;
@@ -131,16 +214,54 @@ public class GameSingleton : MonoBehaviour
             {
                 if (currentNumber < requiredNumber)
                 {
+                    if (currentNumber > 0)
+                    {
+                        currentHud.SetRequirementNumber(i, requiredNumber - currentNumber);
+                    }
                     goalReached = false;
-                } else
+                }
+                else
                 {
                     currentHud.MarkRequirementComplete(i);
                 }
-            } else
+            }
+            else
             {
                 goalReached = false;
             }
         }
         return goalReached;
+    }
+
+    private bool SceneExists(string sceneName)
+    {
+        int index = SceneUtility.GetBuildIndexByScenePath(sceneName);
+        return index != -1;
+    }
+
+    private void Initialize()
+    {
+        currentLevelGrid = FindObjectOfType<LevelGrid>();
+        currentLevel = GetCurrentSceneName();
+        currentHud = FindObjectOfType<Hud>();
+        currentProgress = new();
+        gameOver = false;
+    }
+
+    private void UpdateProperties(GameSingleton other)
+    {
+        levelRequirements = other.levelRequirements;
+    }
+
+    private void SetGameOver(GameOverReason reason)
+    {
+        gameOver = true;
+
+        currentHud.ShowGameOverPanel(reason);
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Initialize();
     }
 }

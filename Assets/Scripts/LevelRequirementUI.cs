@@ -14,10 +14,14 @@ public class LevelRequirementUI : MonoBehaviour
         completeCheckImage.enabled = false;
     }
 
-    public void SetNumber(Color blockColor, int chunkCount)
+    public void SetNumber(int chunkCount)
+    {
+        chunkCountText.text = chunkCount.ToString();
+    }
+
+    public void SetColor(Color blockColor)
     {
         blockImage.color = blockColor;
-        chunkCountText.text = chunkCount.ToString();
     }
 
     public void MarkCompleted()
